@@ -1,3 +1,4 @@
+require("./models/Student"); // ✅ Charge le modèle Student
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -22,11 +23,14 @@ app.get("/", (_req, res) => {
 const studentRoutes = require("./routes/studentRoutes");
 const moduleGlobalRoutes = require("./routes/moduleGlobalRoutes");
 const semestreRoutes = require("./routes/semestreRoutes");
+const departementRoutes = require("./routes/departementRoutes");
 
 // ➤ Enregistrement des routes
 app.use("/api/students", studentRoutes);
 app.use("/api/modules-globales", moduleGlobalRoutes);
 app.use("/api/semestres", semestreRoutes);
+app.use("/api/departements", departementRoutes);
+
 
 // ➤ Démarrer le serveur
 app.listen(PORT, () => {
