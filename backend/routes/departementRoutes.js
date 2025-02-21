@@ -31,15 +31,19 @@ router.get("/", async (req, res) => {
 router.get("/:code/:niveau", async (req, res) => {
   try {
     const { code, niveau } = req.params;
-    const departement = await Departement.findOne({ code })
-      .populate({ path: "semestres", match: { niveau } })
-      .populate({ path: "students", match: { niveau } });
 
+    // Trouver le département
+    const departement = await Departement.findOne({ code });
     if (!departement) return res.status(404).json({ message: "Département non trouvé" });
-    res.json(departement);
+
+    // Récupérer les étudiants du département et du niveau spécifié
+    const students = await Student.find({ departement: departement._id, niveau });
+
+    res.json({ departement, students });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 module.exports = router;
