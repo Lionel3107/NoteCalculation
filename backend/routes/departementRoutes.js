@@ -2,6 +2,8 @@ const express = require("express");
 const Departement = require("../models/Departement");
 const Semestre = require("../models/Semestre");
 const Student = require("../models/Student"); // ✅ Vérifie bien cette ligne !
+const ModuleGlobal = require("../models/ModuleGlobal");
+
 
 const router = express.Router();
 
@@ -45,21 +47,17 @@ router.get("/:code/:niveau/semestre/:semestreNumero/etudiants", async (req, res)
   try {
     const { code, niveau, semestreNumero } = req.params;
 
-    console.log(`📌 Vérification du semestre : ${code}, ${niveau}, Semestre ${semestreNumero}`);
+    console.log(`📌 Vérification du semestre : Département: ${code}, Niveau: ${niveau}, Semestre: ${semestreNumero}`);
 
-    // Convertir semestreNumero en Number pour éviter les erreurs de type
-    const semestre = await Semestre.findOne({ 
-      numero: parseInt(semestreNumero), 
-      departementCode: code, 
-      niveau 
-    });
+    // Vérifier si le semestre existe
+    const semestre = await Semestre.findOne({ numero: parseInt(semestreNumero) });
 
     if (!semestre) {
       console.log("❌ Semestre introuvable !");
-      return res.status(404).json({ message: "Semestre non trouvé pour ce département et niveau" });
+      return res.status(404).json({ message: "Semestre non trouvé" });
     }
 
-    // Récupérer les étudiants du département et du niveau donné
+    // Trouver les étudiants du département et du niveau donné
     const students = await Student.find({ departementCode: code, niveau });
 
     if (students.length === 0) {
@@ -75,5 +73,41 @@ router.get("/:code/:niveau/semestre/:semestreNumero/etudiants", async (req, res)
   }
 });
 
+//Récupération des modules globaux liés au département et au semestre demandé.
+router.get("/:code/:niveau/semestre/:semestreNumero/etudiants/modules", async (req, res) => {
+  try {
+    const { code, niveau, semestreNumero } = req.params;
+
+    console.log(`📌 Récupération des étudiants et leurs modules pour Département: ${code}, Niveau: ${niveau}, Semestre: ${semestreNumero}`);
+
+    // Vérifier si le semestre existe
+    const semestre = await Semestre.findOne({ numero: parseInt(semestreNumero) });
+    if (!semestre) {
+      console.log("❌ Semestre introuvable !");
+      return res.status(404).json({ message: "Semestre non trouvé" });
+    }
+
+    // Trouver les étudiants du département et du niveau donné
+    const students = await Student.find({ departementCode: code, niveau });
+
+    if (students.length === 0) {
+      console.log("❌ Aucun étudiant trouvé !");
+      return res.status(404).json({ message: "Aucun étudiant trouvé pour ce département et ce niveau" });
+    }
+
+    // Trouver les modules globaux liés à ce département et semestre
+    const modules = await ModuleGlobal.find({ departementCode: code, semestre: semestreNumero });
+
+    if (modules.length === 0) {
+      console.log("❌ Aucun module trouvé !");
+      return res.status(404).json({ message: "Aucun module trouvé pour ce département et ce semestre" });
+    }
+
+    res.json({ departement: code, niveau, semestreNumero, students, modules });
+  } catch (error) {
+    console.error("❌ Erreur :", error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = router;
