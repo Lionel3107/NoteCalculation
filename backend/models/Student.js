@@ -13,7 +13,8 @@ const studentSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   telephone: { type: String },
   dateNaissance: { type: Date },
-  departement: { type: mongoose.Schema.Types.ObjectId, ref: "Departement", required: true }, // Lien vers le département
+ // departement: { type: mongoose.Schema.Types.ObjectId, ref: "Departement", required: true }, // Lien vers le département
+ departementCode: { type: String, required: true }, // Utilisation du code au lieu de l'ID
   niveau: { 
     type: String, 
     required: true,

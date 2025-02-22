@@ -3,11 +3,7 @@ const mongoose = require("mongoose");
 const moduleGlobalSchema = new mongoose.Schema({
   nom: { type: String, required: true, unique: true }, 
   code: { type: String, required: true, unique: true }, 
-  departement: { 
-    type: String, 
-    required: true, 
-    enum: ["Informatique", "Mécanique", "Électricité"] 
-  }, 
+  departementCode: { type: String, required: true }, // Département auquel appartient le module 
   niveau: { 
     type: String, 
     required: true, 

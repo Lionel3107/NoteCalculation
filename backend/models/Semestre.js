@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 
 const semestreSchema = new mongoose.Schema({
-  numero: { type: Number, required: true, unique: true, enum: [1, 2, 3, 4, 5, 6] }, 
-  departement: { type: mongoose.Schema.Types.ObjectId, ref: "Departement", required: true }, // Lien vers le département
-  niveau: { type: String, required: true, enum: ["L1", "L2", "L3"] }, // Niveau d'étude
-  modulesGlobales: [{ type: mongoose.Schema.Types.ObjectId, ref: "ModuleGlobal" }], 
-  totalCredits: { type: Number, default: 30 }
+  numero: { type: Number, required: true, unique: true, enum: [1, 2, 3, 4, 5, 6] },
+  description: { type: String }, // Ex: "Semestre 1", "Semestre 2"
+  modulesGlobales: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "ModuleGlobal" 
+  }] // Liste des modules globaux spécifiques à ce semestre
 });
 
 const Semestre = mongoose.model("Semestre", semestreSchema);

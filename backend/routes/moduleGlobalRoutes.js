@@ -6,26 +6,28 @@ const router = express.Router();
 // ➤ Ajouter un module global avec sous-modules et département
 router.post("/", async (req, res) => {
   try {
+    const { nom, code, departementCode, niveau, sousModules, coefficientTotal, semestre } = req.body;
+
     console.log("📌 Requête reçue :", req.body);
 
-    const { nom, code, departement, niveau, sousModules, coefficientTotal, semestre } = req.body;
-
-    if (!nom || !code || !departement || !niveau || !sousModules || !coefficientTotal || !semestre) {
-      return res.status(400).json({ message: "Données manquantes dans la requête" });
+    // Vérifier que tous les champs requis sont bien présents
+    if (!nom || !code || !departementCode || !niveau || !sousModules || !coefficientTotal || !semestre) {
+      return res.status(400).json({ message: "Données manquantes dans la requête. Assurez-vous de fournir tous les champs requis." });
     }
 
-    const totalCoefficients = sousModules.reduce((sum, mod) => sum + mod.coefficient, 0);
-    if (totalCoefficients !== coefficientTotal) {
-      return res.status(400).json({ message: "Les coefficients des sous-modules ne correspondent pas au coefficient total." });
+    // Vérifier que `sousModules` est bien un tableau et non vide
+    if (!Array.isArray(sousModules) || sousModules.length === 0) {
+      return res.status(400).json({ message: "Le champ `sousModules` est requis et doit contenir au moins un sous-module." });
     }
 
-    const moduleGlobal = new ModuleGlobal({ nom, code, departement, niveau, sousModules, coefficientTotal, semestre });
+    const moduleGlobal = new ModuleGlobal({ nom, code, departementCode, niveau, sousModules, coefficientTotal, semestre });
     await moduleGlobal.save();
     res.status(201).json(moduleGlobal);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
+
 
 // ➤ Récupérer tous les modules globaux
 router.get("/", async (req, res) => {

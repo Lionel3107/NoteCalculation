@@ -6,13 +6,28 @@ const router = express.Router();
 // ➤ Ajouter un étudiant
 router.post("/", async (req, res) => {
   try {
-    const student = new Student(req.body);
+    const { matricule, nom, prenom, email, departementCode, niveau } = req.body;
+
+    if (!departementCode || !niveau) {
+      return res.status(400).json({ message: "Le département et le niveau sont requis." });
+    }
+
+    const student = new Student({
+      matricule,
+      nom,
+      prenom,
+      email,
+      departementCode,
+      niveau
+    });
+
     await student.save();
     res.status(201).json(student);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
+
 
 // ➤ Récupérer tous les étudiants
 router.get("/", async (req, res) => {

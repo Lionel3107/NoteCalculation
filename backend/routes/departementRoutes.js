@@ -26,21 +26,51 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-// ➤ Récupérer un département spécifique avec ses semestres et étudiants par niveau d'études
+// =================================================================
 router.get("/:code/:niveau", async (req, res) => {
   try {
     const { code, niveau } = req.params;
 
-    // Trouver le département
-    const departement = await Departement.findOne({ code });
-    if (!departement) return res.status(404).json({ message: "Département non trouvé" });
+    // Récupérer les étudiants du département et du niveau donné
+    const students = await Student.find({ departementCode: code, niveau });
 
-    // Récupérer les étudiants du département et du niveau spécifié
-    const students = await Student.find({ departement: departement._id, niveau });
-
-    res.json({ departement, students });
+    res.json({ departement: code, niveau, students });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ➤ Récupérer les étudiants d’un département, d’un niveau et d’un semestre
+router.get("/:code/:niveau/semestre/:semestreNumero/etudiants", async (req, res) => {
+  try {
+    const { code, niveau, semestreNumero } = req.params;
+
+    console.log(`📌 Vérification du semestre : ${code}, ${niveau}, Semestre ${semestreNumero}`);
+
+    // Convertir semestreNumero en Number pour éviter les erreurs de type
+    const semestre = await Semestre.findOne({ 
+      numero: parseInt(semestreNumero), 
+      departementCode: code, 
+      niveau 
+    });
+
+    if (!semestre) {
+      console.log("❌ Semestre introuvable !");
+      return res.status(404).json({ message: "Semestre non trouvé pour ce département et niveau" });
+    }
+
+    // Récupérer les étudiants du département et du niveau donné
+    const students = await Student.find({ departementCode: code, niveau });
+
+    if (students.length === 0) {
+      console.log("❌ Aucun étudiant trouvé !");
+      return res.status(404).json({ message: "Aucun étudiant trouvé pour ce département et ce niveau" });
+    }
+
+    console.log(`✅ ${students.length} étudiants trouvés`);
+    res.json({ departement: code, niveau, semestreNumero, students });
+  } catch (error) {
+    console.error("❌ Erreur :", error);
     res.status(500).json({ message: error.message });
   }
 });

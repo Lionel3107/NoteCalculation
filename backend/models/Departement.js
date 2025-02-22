@@ -5,7 +5,7 @@ const departementSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true }, // Ex: INFO, MECA, ELEC
   niveaux: [{ type: String, enum: ["L1", "L2", "L3"] }], // Niveaux disponibles dans ce département
   semestres: [{ type: mongoose.Schema.Types.ObjectId, ref: "Semestre" }], // Liste des semestres associés
-  etudiants: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }] // Liste des étudiants du département
+  etudiant: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }] // Liste des étudiants du département
 });
 
 const Departement = mongoose.model("Departement", departementSchema);
