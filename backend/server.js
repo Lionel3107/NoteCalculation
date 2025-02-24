@@ -28,6 +28,8 @@ const departementRoutes = require("./routes/departementRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+
 
 
 
@@ -39,6 +41,8 @@ app.use("/api/semestres", semestreRoutes);
 app.use("/api/departements", departementRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/stats", statsRoutes);app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+
 
 // ➤ Démarrer le serveur
 app.listen(PORT, () => {
