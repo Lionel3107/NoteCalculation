@@ -41,6 +41,27 @@ router.post("/", async (req, res) => {
     }
   });
 
+  // ➤ Récupérer toutes les notes d’un étudiant
+  router.get("/:etudiantMatricule", async (req, res) => {
+    try {
+      const { etudiantMatricule } = req.params;
+      console.log(`📌 Récupération des notes de l'étudiant ${etudiantMatricule}`);
+  
+      // Trouver toutes les notes associées à cet étudiant
+      const notes = await Note.find({ etudiantMatricule });
+  
+      if (notes.length === 0) {
+        return res.status(404).json({ message: "Aucune note trouvée pour cet étudiant." });
+      }
+  
+      res.json({ etudiantMatricule, notes });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  module.exports = router;
+  
 // Ajout d'une route GET pour récupérer la moyenne d'un module global
 router.get("/:etudiantMatricule/module/:moduleCode", async (req, res) => {
     try {
