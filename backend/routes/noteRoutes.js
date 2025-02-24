@@ -1,7 +1,9 @@
 const express = require("express");
 const Note = require("../models/Note");
 const ModuleGlobal = require("../models/ModuleGlobal");
-
+const { verifyToken, isChefDepartement } = require("../middlewares/authMiddleware");
+const { isDirecteur } = require("../middlewares/authMiddleware");
+const { canViewNotes } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
@@ -42,8 +44,7 @@ router.post("/", async (req, res) => {
   });
 
   // ➤ Récupérer toutes les notes d’un étudiant
-  router.get("/:etudiantMatricule", async (req, res) => {
-    try {
+  router.get("/:etudiantMatricule", verifyToken, canViewNotes, async (req, res) => {    try {
       const { etudiantMatricule } = req.params;
       console.log(`📌 Récupération des notes de l'étudiant ${etudiantMatricule}`);
   
@@ -153,7 +154,7 @@ router.get("/:etudiantMatricule/:sousModuleCode", async (req, res) => {
   
 
 // ➤ Modifier une note
-router.put("/:etudiantMatricule/:sousModuleCode", async (req, res) => {
+router.put("/:etudiantMatricule/:sousModuleCode", verifyToken, isChefDepartement, async (req, res) => {
     try {
       const { etudiantMatricule, sousModuleCode } = req.params;
       const { notes, ponderations, noteParticipation, notePresence } = req.body;

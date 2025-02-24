@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const authMiddleware = require("./middlewares/authMiddleware");
 
 // Connexion à la base de données
 connectDB();
@@ -26,6 +27,8 @@ const semestreRoutes = require("./routes/semestreRoutes");
 const departementRoutes = require("./routes/departementRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const statsRoutes = require("./routes/statsRoutes");
+const authRoutes = require("./routes/authRoutes");
+
 
 
 
@@ -35,7 +38,7 @@ app.use("/api/modules-globales", moduleGlobalRoutes);
 app.use("/api/semestres", semestreRoutes);
 app.use("/api/departements", departementRoutes);
 app.use("/api/notes", noteRoutes);
-app.use("/api/stats", statsRoutes);
+app.use("/api/stats", statsRoutes);app.use("/api/auth", authRoutes);
 
 // ➤ Démarrer le serveur
 app.listen(PORT, () => {
