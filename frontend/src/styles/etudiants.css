@@ -1,0 +1,66 @@
+/* Conteneur principal */
+.container {
+  display: flex;
+  justify-content: flex-start; /* Aligner complètement à gauche */
+  align-items: flex-start; /* Placer en haut */
+  height: 100vh;
+  padding: 20px; /* Réduire le padding pour le coller à gauche */
+}
+
+/* Tableau stylisé */
+.table-container {
+  width: 70%;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  margin-left: 0; /* Supprimer toute marge à gauche */
+}
+
+/* Titre */
+h4 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #1976d2;
+}
+
+/* Filtres */
+.filters {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.filters select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+/* Tableau */
+.MuiTable-root {
+  border-collapse: separate;
+  border-spacing: 0 10px; /* Espacement entre les lignes */
+}
+
+/* Style des lignes */
+.MuiTableRow-root:hover {
+  background: rgba(25, 118, 210, 0.1); /* Bleu clair au survol */
+  cursor: pointer;
+}
+
+/* En-têtes */
+.MuiTableHead-root {
+  background: #1976d2;
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  color: white !important;
+  font-weight: bold;
+}
+
+/* Cellules */
+.MuiTableCell-root {
+  padding: 15px;
+  font-size: 16px;
+}

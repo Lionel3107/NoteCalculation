@@ -1,0 +1,31 @@
+/* Styles du Dashboard */
+.dashboard-container {
+    text-align: center;
+    margin: 50px auto;
+    width: 80%;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .dashboard-container h2 {
+    color: #1976d2;
+    font-size: 24px;
+  }
+  
+  .logout-btn {
+    margin-top: 20px;
+    padding: 12px;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .logout-btn:hover {
+    background-color: #b71c1c;
+  }
+  
