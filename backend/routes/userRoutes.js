@@ -7,40 +7,34 @@ const mongoose = require("mongoose");
 const router = express.Router();
 
 // ➤ Affecter un module à un Professeur (Réservé aux Chefs de Département)
-router.put("/assign-module/:professeurId", verifyToken, isChefDepartement, async (req, res) => {
+router.put("/assign-sousmodule/:professeurId", verifyToken, isChefDepartement, async (req, res) => {
     try {
       const { professeurId } = req.params;
-      const { moduleCode } = req.body;
+      const { sousModuleCode } = req.body;
   
       const professeur = await User.findById(professeurId);
       if (!professeur || professeur.role !== "Professeur") {
         return res.status(404).json({ message: "Professeur non trouvé." });
       }
   
-      // Vérifier si le champ `modulesEnseignes` existe, sinon l'initialiser
-      if (!professeur.modulesEnseignes) {
-        professeur.modulesEnseignes = [];
-      }
-  
-      // Vérifier si le chef de département essaie d'affecter un module en dehors de son département
+      // Vérifier si le chef de département essaie d'affecter un sous-module en dehors de son département
       if (!req.user.departementCode || professeur.departementCode !== req.user.departementCode) {
-        return res.status(403).json({ message: "Accès interdit. Vous ne pouvez assigner que des modules de votre département." });
+        return res.status(403).json({ message: "Accès interdit. Vous ne pouvez assigner que des sous-modules de votre département." });
       }
   
-      // Vérifier si le module n'est pas déjà affecté
-      if (professeur.modulesEnseignes.includes(moduleCode)) {
-        return res.status(400).json({ message: "Ce module est déjà assigné à ce professeur." });
+      // Vérifier si le sous-module n'est pas déjà affecté
+      if (professeur.sousModulesEnseignes.includes(sousModuleCode)) {
+        return res.status(400).json({ message: "Ce sous-module est déjà assigné à ce professeur." });
       }
   
-      professeur.modulesEnseignes.push(moduleCode);
+      professeur.sousModulesEnseignes.push(sousModuleCode);
       await professeur.save();
   
-      res.json({ message: `Module ${moduleCode} assigné avec succès à ${professeur.nom}.` });
+      res.json({ message: `Sous-module ${sousModuleCode} assigné avec succès à ${professeur.nom}.` });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   });
-  
 
 // ➤ Ajouter un Professeur (Réservé aux Chefs de Département)
 router.post("/add-professeur", verifyToken, isChefDepartement, async (req, res) => {
@@ -120,5 +114,7 @@ router.post("/add-professeur", verifyToken, isChefDepartement, async (req, res) 
       res.status(500).json({ message: error.message });
     }
   });
-  
+
+
+
 module.exports = router;

@@ -4,6 +4,7 @@ const ModuleGlobal = require("../models/ModuleGlobal");
 const { verifyToken, isChefDepartement } = require("../middlewares/authMiddleware");
 const { isDirecteur } = require("../middlewares/authMiddleware");
 const { canViewNotes } = require("../middlewares/authMiddleware");
+const { canEnterNotes } = require("../middlewares/authMiddleware")
 
 const router = express.Router();
 
@@ -225,5 +226,16 @@ router.delete("/:etudiantMatricule/:sousModuleCode", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+router.post("/", verifyToken, canEnterNotes, async (req, res) => {
+  try {
+    const note = new Note(req.body);
+    await note.save();
+    res.status(201).json(note);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 module.exports = router;

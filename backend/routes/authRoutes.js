@@ -28,27 +28,27 @@ router.post("/register", async (req, res) => {
 
 // ➤ Connexion d’un utilisateur
 router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
-
-    // Vérifier si le mot de passe correspond
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Mot de passe incorrect" });
-
-    // Générer un token JWT
-    const token = jwt.sign(
-      { id: user._id, role: user.role, departementCode: user.departementCode },
-      SECRET_KEY,
-      { expiresIn: "1h" }
-    );
-
-    res.json({ token, role: user.role });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    try {
+      const { email, password } = req.body;
+      const user = await User.findOne({ email });
+  
+      if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+  
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return res.status(401).json({ message: "Mot de passe incorrect" });
+  
+      // Générer un token JWT avec les sous-modules assignés
+      const token = jwt.sign(
+        { id: user._id, role: user.role, departementCode: user.departementCode, sousModulesEnseignes: user.sousModulesEnseignes },
+        process.env.JWT_SECRET || "secret_key",
+        { expiresIn: "1h" }
+      );
+  
+      res.json({ token, role: user.role });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
 
 module.exports = router;
