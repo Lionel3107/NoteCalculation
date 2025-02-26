@@ -1,100 +1,161 @@
-/* Conteneur principal */
+/* Styles généraux pour le conteneur */
 .container {
-  display: flex;
-  justify-content: flex-start; /* Aligner complètement à gauche */
-  align-items: flex-start; /* Placer en haut */
-  height: 100vh;
   padding: 20px;
-  width: 100%; /* Assurer que le conteneur prend toute la largeur */
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Tableau stylisé */
-.table-container {
-  width: 60%;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 20px;
-  margin-left:20px;
-  position: absolute; /* Position absolue pour mieux contrôler */
-  left: 0; /* Coller à gauche */
-  top: 20px; /* Ajuster la hauteur */
-}
-
-/* Titre */
+/* Styles pour le titre */
 h4 {
+  font-weight: 600;
+  color: #2c3e50;
   margin-bottom: 20px;
-  font-size: 22px;
-  color: #1976d2;
+  text-align: center;
 }
 
-/* Filtres */
+/* Styles pour les filtres */
 .filters {
   display: flex;
   gap: 15px;
-  margin-bottom: 20px;
-}
-
-.filters select {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-/* Tableau */
-.MuiTable-root {
-  border-collapse: separate;
-  border-spacing: 0 10px; /* Espacement entre les lignes */
-}
-
-/* Style des lignes */
-.MuiTableRow-root:hover {
-  background: rgba(25, 118, 210, 0.1); /* Bleu clair au survol */
-  cursor: pointer;
-}
-
-/* En-têtes */
-.MuiTableHead-root {
-  background: #1976d2;
-}
-
-.MuiTableHead-root .MuiTableCell-root {
-  color: white !important;
-  font-weight: bold;
-}
-
-/* Cellules */
-.MuiTableCell-root {
-  padding: 15px;
-  font-size: 16px;
-}
-
-
-
-/* Formulaire d'ajout d'étudiant */
-.add-student-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap; /* Adaptation pour mobile */
+  margin-bottom: 25px;
   justify-content: center;
 }
 
-.add-student-form input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.filters .MuiSelect-select {
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #f5f6fa;
+  border-radius: 8px;
 }
 
-.add-student-form button {
-  padding: 10px 15px;
-  background-color: #1976d2;
+/* Styles pour le conteneur du tableau */
+.MuiTableContainer-root {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+
+/* Styles pour le tableau */
+.MuiTable-root {
+  min-width: 700px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* En-tête du tableau */
+.MuiTableHead-root {
+  background-color: #3498db;
+}
+
+.MuiTableCell-head {
   color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: none;
 }
 
-.add-student-form button:hover {
-  background-color: #125ca1;
+/* Corps du tableau */
+.MuiTableRow-root {
+  transition: background-color 0.3s ease;
+}
+
+.MuiTableRow-root:hover {
+  background-color: #f5f6fa;
+}
+
+.MuiTableCell-body {
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  color: #34495e;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+/* Ligne vide (aucun étudiant trouvé) */
+.MuiTableCell-body[colspan] {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #7f8c8d;
+}
+
+/* Boutons dans le tableau */
+.MuiButton-root {
+  text-transform: none;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.MuiButton-outlined {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.MuiButton-outlined:hover {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+/* Styles pour la fenêtre modale */
+.MuiDialogTitle-root {
+  background-color: #3498db;
+  color: white;
+  font-weight: 600;
+  padding: 16px 24px;
+}
+
+.MuiDialogContent-root {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.MuiTextField-root {
+  width: 100%;
+}
+
+.MuiDialogActions-root {
+  padding: 10px 24px;
+}
+
+.MuiButton-root[color="primary"] {
+  background-color: #3498db;
+  color: white;
+}
+
+.MuiButton-root[color="primary"]:hover {
+  background-color: #2980b9;
+}
+
+.MuiButton-root[color="secondary"] {
+  color: #e74c3c;
+}
+
+.MuiButton-root[color="secondary"]:hover {
+  background-color: #f9ebeb;
+}
+
+/* Responsivité */
+@media (max-width: 600px) {
+  .filters {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .MuiTableCell-head,
+  .MuiTableCell-body {
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+  .MuiButton-root {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
 }

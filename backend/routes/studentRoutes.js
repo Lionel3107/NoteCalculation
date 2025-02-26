@@ -59,29 +59,30 @@ router.get("/:matricule", async (req, res) => {
 });
 
 // ➤ Mettre à jour un étudiant
-router.put("/:matricule", async (req, res) => {
+router.put("/:id", verifyToken, isSecretaire, async (req, res) => {
   try {
-    const student = await Student.findOneAndUpdate(
-      { matricule: req.params.matricule },
-      req.body,
-      { new: true }
-    );
-    if (!student) return res.status(404).json({ message: "Étudiant non trouvé" });
-    res.json(student);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
+    const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
-// ➤ Supprimer un étudiant
-router.delete("/:matricule", async (req, res) => {
-  try {
-    const student = await Student.findOneAndDelete({ matricule: req.params.matricule });
-    if (!student) return res.status(404).json({ message: "Étudiant non trouvé" });
-    res.json({ message: "Étudiant supprimé avec succès" });
+    if (!student) return res.status(404).json({ message: "Étudiant non trouvé." });
+
+    res.json(student);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+// ➤ Supprimer un étudiant
+router.delete("/:id", verifyToken, isSecretaire, async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ message: "Étudiant non trouvé." });
+
+    res.json({ message: "Étudiant supprimé avec succès." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 module.exports = router;
