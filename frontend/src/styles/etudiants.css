@@ -4,17 +4,21 @@
   justify-content: flex-start; /* Aligner complètement à gauche */
   align-items: flex-start; /* Placer en haut */
   height: 100vh;
-  padding: 20px; /* Réduire le padding pour le coller à gauche */
+  padding: 20px;
+  width: 100%; /* Assurer que le conteneur prend toute la largeur */
 }
 
 /* Tableau stylisé */
 .table-container {
-  width: 70%;
+  width: 60%;
   background: white;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   padding: 20px;
-  margin-left: 0; /* Supprimer toute marge à gauche */
+  margin-left:20px;
+  position: absolute; /* Position absolue pour mieux contrôler */
+  left: 0; /* Coller à gauche */
+  top: 20px; /* Ajuster la hauteur */
 }
 
 /* Titre */
@@ -63,4 +67,34 @@ h4 {
 .MuiTableCell-root {
   padding: 15px;
   font-size: 16px;
+}
+
+
+
+/* Formulaire d'ajout d'étudiant */
+.add-student-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Adaptation pour mobile */
+  justify-content: center;
+}
+
+.add-student-form input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.add-student-form button {
+  padding: 10px 15px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-student-form button:hover {
+  background-color: #125ca1;
 }

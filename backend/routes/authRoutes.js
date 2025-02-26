@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { verifyToken } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 const SECRET_KEY = process.env.JWT_SECRET || "secret_key";
@@ -49,6 +50,18 @@ router.post("/login", async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   });
+
+  router.get("/me", verifyToken, async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id).select("-password");
+      if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+  
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   
 
 module.exports = router;

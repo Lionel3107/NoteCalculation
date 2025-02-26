@@ -1,17 +1,31 @@
 const jwt = require("jsonwebtoken");
 
-exports.verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (!token) return res.status(403).json({ message: "Accès refusé" });
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_key");
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: "Token invalide" });
+exports.verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1]; // Récupérer le token
+
+  console.log("🟢 Token reçu par le backend :", token); // 🔥 DEBUG
+
+  if (!token) {
+    return res.status(403).json({ message: "🔴 Aucun token fourni." });
   }
+
+  if (!process.env.JWT_SECRET) {
+    console.log("❌ ERREUR : JWT_SECRET n'est pas défini !");
+    return res.status(500).json({ message: "🔴 Erreur serveur : JWT_SECRET non défini." });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      console.log("❌ Erreur de vérification du token :", err.message); // 🔥 DEBUG
+      return res.status(401).json({ message: "🔴 Token invalide." });
+    }
+    req.user = user;
+    console.log("✅ Utilisateur authentifié :", req.user); // 🔥 DEBUG
+    next();
+  });
 };
+
 
 // ➤ Vérification des rôles
 exports.isDirecteur = (req, res, next) => {

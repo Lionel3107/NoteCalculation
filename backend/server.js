@@ -40,7 +40,8 @@ app.use("/api/modules-globales", moduleGlobalRoutes);
 app.use("/api/semestres", semestreRoutes);
 app.use("/api/departements", departementRoutes);
 app.use("/api/notes", noteRoutes);
-app.use("/api/stats", statsRoutes);app.use("/api/auth", authRoutes);
+app.use("/api/stats", statsRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
 
