@@ -1,7 +1,7 @@
 const express = require("express");
 const Note = require("../models/Note");
 const ModuleGlobal = require("../models/ModuleGlobal");
-const { verifyToken, isChefDepartement } = require("../middlewares/authMiddleware");
+const { verifyToken, isChefDepartement, isProfesseur } = require("../middlewares/authMiddleware");
 const { isDirecteur } = require("../middlewares/authMiddleware");
 const { canViewNotes } = require("../middlewares/authMiddleware");
 const { canEnterNotes } = require("../middlewares/authMiddleware")
@@ -155,61 +155,38 @@ router.get("/:etudiantMatricule/:sousModuleCode", async (req, res) => {
   
 
 // ➤ Modifier une note
-router.put("/:etudiantMatricule/:sousModuleCode", verifyToken, isChefDepartement, async (req, res) => {
-    try {
+router.put("/:etudiantMatricule/:sousModuleCode", verifyToken, canEnterNotes, async (req, res) => {
+  try {
       const { etudiantMatricule, sousModuleCode } = req.params;
-      const { notes, ponderations, noteParticipation, notePresence } = req.body;
-  
-      console.log("📌 Requête reçue :", req.body); // Debug
-  
-      const note = await Note.findOne({ etudiantMatricule, sousModuleCode });
-      if (!note) return res.status(404).json({ message: "Note non trouvée" });
-  
-      // Vérifier si notes et ponderations sont bien envoyés
-      if (!notes || !ponderations) {
-        return res.status(400).json({ message: "Les notes et les pondérations sont requises." });
+      console.log(`🔍 Recherche de la note pour l'étudiant ${etudiantMatricule} et le sous-module ${sousModuleCode}`);
+
+      const note = await Note.findOne({ etudiantMatricule: etudiantMatricule, sousModuleCode: sousModuleCode });
+
+      if (!note) {
+          console.log("❌ Aucune note trouvée avec findOne() !");
+          console.log("🔍 Tentative de recherche avec find() pour voir s'il y a des doublons...");
+          const allNotes = await Note.find({ etudiantMatricule: etudiantMatricule, sousModuleCode: sousModuleCode });
+
+          if (allNotes.length > 0) {
+              console.log(`⚠️ Plusieurs notes trouvées (${allNotes.length} entrées), possible problème de doublon.`);
+              return res.status(400).json({ message: "Plusieurs notes trouvées pour cet étudiant et sous-module. Vérifiez la base de données." });
+          }
+
+          return res.status(404).json({ message: "Aucune note trouvée." });
       }
-  
-      if (notes.length === 0 || ponderations.length === 0) {
-        return res.status(400).json({ message: "Les notes et les pondérations ne peuvent pas être vides." });
-      }
-      if (notes.length !== ponderations.length) {
-        return res.status(400).json({ message: "Le nombre de pondérations doit correspondre au nombre de notes." });
-      }
-  
-      note.notes = notes;
-      note.ponderations = ponderations;
-  
-      if (noteParticipation !== undefined) note.noteParticipation = noteParticipation;
-      if (notePresence !== undefined) note.notePresence = notePresence;
-  
-      console.log("📌 Notes après modification :", note.notes);
-      console.log("📌 Pondérations après modification :", note.ponderations);
-  
-      // Vérifier que la somme des pondérations fait bien 100%
-      const totalPonderation = note.ponderations.reduce((acc, p) => acc + p, 0);
-      if (totalPonderation !== 100) {
-        return res.status(400).json({ message: "La somme des pondérations doit être égale à 100%." });
-      }
-  
-      // Correction ici : Vérifier si `ponderations[index]` existe avant de l'utiliser
-      const moyennePonderee = note.notes.reduce((sum, noteValue, index) => {
-        if (typeof note.ponderations[index] === "undefined") {
-          console.error(`❌ Erreur : pondérations[${index}] est undefined`);
-          return sum;
-        }
-        return sum + (noteValue * (note.ponderations[index] / 100));
-      }, 0);
-  
-      note.moyenneSousModule = (moyennePonderee * 0.85) + (note.noteParticipation * 0.10) + (note.notePresence * 0.05);
-  
+
+      console.log("✅ Note trouvée :", note);
+
+      note.notes = req.body.notes;
       await note.save();
-      res.json(note);
-    } catch (error) {
-      console.error("❌ Erreur :", error);
+
+      res.json({ message: "Notes mises à jour avec succès", note });
+  } catch (error) {
+      console.log("❌ ERREUR :", error.message);
       res.status(500).json({ message: error.message });
-    }
-  });
+  }
+});
+
   
   
 
@@ -226,6 +203,41 @@ router.delete("/:etudiantMatricule/:sousModuleCode", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+router.get("/:departement/:niveau/:semestre", async (req, res) => {
+  try {
+      const { departement, niveau, semestre } = req.params;
+      const notes = await Note.find({ departementCode: departement, niveau, semestre })
+                              .populate("etudiant")
+                              .populate("sousModule");
+      if (!notes.length) {
+          return res.status(404).json({ message: "Aucune note trouvée" });
+      }
+      res.json(notes);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
+
+
+router.get("/", async (req, res) => {
+  try {
+      console.log("📌 Récupération de toutes les notes...");
+
+      const notes = await Note.find();
+      if (notes.length === 0) {
+          console.log("❌ Aucune note trouvée !");
+          return res.status(404).json({ message: "Aucune note enregistrée dans la base de données." });
+      }
+
+      console.log(`✅ ${notes.length} notes trouvées.`);
+      res.json(notes);
+  } catch (error) {
+      console.log("❌ ERREUR :", error.message);
+      res.status(500).json({ message: error.message });
+  }
+});
+
 
 router.post("/", verifyToken, canEnterNotes, async (req, res) => {
   try {

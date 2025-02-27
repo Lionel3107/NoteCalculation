@@ -32,11 +32,18 @@ router.get("/", async (req, res) => {
 router.get("/:code/:niveau", async (req, res) => {
   try {
     const { code, niveau } = req.params;
+    
+    const departement = await Departement.findOne({ code })
+      .populate({
+        path: "students",
+        match: { niveau }
+      });
 
-    // Récupérer les étudiants du département et du niveau donné
-    const students = await Student.find({ departementCode: code, niveau });
+    if (!departement) {
+      return res.status(404).json({ message: "Département non trouvé" });
+    }
 
-    res.json({ departement: code, niveau, students });
+    res.json(departement);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -74,7 +81,7 @@ router.get("/:code/:niveau/semestre/:semestreNumero/etudiants", async (req, res)
 });
 
 //Récupération des modules globaux liés au département et au semestre demandé.
-router.get("/:code/:niveau/semestre/:semestreNumero/etudiants/modules", async (req, res) => {
+router.get("/:code/:niveau/semestre/:semestreNumero/modules", async (req, res) => {
   try {
     const { code, niveau, semestreNumero } = req.params;
 

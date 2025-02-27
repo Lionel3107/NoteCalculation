@@ -2,25 +2,23 @@ const jwt = require("jsonwebtoken");
 
 
 exports.verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1]; // Récupérer le token
+  const authHeader = req.headers.authorization;
+  console.log("🔍 Header Authorization reçu :", authHeader); // 🔥 DEBUG
 
-  console.log("🟢 Token reçu par le backend :", token); // 🔥 DEBUG
-
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.log("❌ Aucun token fourni !");
     return res.status(403).json({ message: "🔴 Aucun token fourni." });
   }
 
-  if (!process.env.JWT_SECRET) {
-    console.log("❌ ERREUR : JWT_SECRET n'est pas défini !");
-    return res.status(500).json({ message: "🔴 Erreur serveur : JWT_SECRET non défini." });
-  }
+  const token = authHeader.split(" ")[1]; // Extraction du token
+  console.log("🟢 Token extrait :", token); // 🔥 DEBUG
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      console.log("❌ Erreur de vérification du token :", err.message); // 🔥 DEBUG
+      console.log("❌ Erreur de vérification du token :", err.message);
       return res.status(401).json({ message: "🔴 Token invalide." });
     }
-    req.user = user;
+    req.user = decoded;
     console.log("✅ Utilisateur authentifié :", req.user); // 🔥 DEBUG
     next();
   });
@@ -59,22 +57,32 @@ exports.canViewNotes = (req, res, next) => {
 
 exports.canEnterNotes = async (req, res, next) => {
   try {
-    if (req.user.role !== "Professeur") {
-      return res.status(403).json({ message: "Accès interdit. Seuls les professeurs peuvent saisir des notes." });
+    console.log("🟢 Utilisateur authentifié :", req.user);
+
+    if (req.user.role !== "Professeur" && req.user.role !== "ChefDepartement") {
+      console.log("❌ Accès refusé : utilisateur non autorisé.");
+      return res.status(403).json({ message: "Accès interdit. Seuls les professeurs et chefs de département peuvent saisir des notes." });
     }
 
-    // Vérifier si le professeur enseigne bien le sous-module
     const { sousModuleCode } = req.body;
-
     console.log("✅ Vérification du sous-module :", sousModuleCode);
-    console.log("📌 Sous-modules assignés au professeur :", req.user.sousModulesEnseignes);
 
-    if (!req.user.sousModulesEnseignes || !req.user.sousModulesEnseignes.includes(sousModuleCode)) {
+    if (!sousModuleCode) {
+      console.log("❌ ERREUR : Aucun sous-module reçu dans la requête !");
+      return res.status(400).json({ message: "Erreur : Aucun sous-module spécifié." });
+    }
+
+    console.log("📌 Sous-modules assignés à l'utilisateur :", req.user.sousModulesEnseignes);
+
+    if (!req.user.sousModulesEnseignes.includes(sousModuleCode)) {
+      console.log(`❌ Accès refusé : L'utilisateur n'enseigne pas le sous-module ${sousModuleCode}.`);
       return res.status(403).json({ message: "Accès interdit. Vous ne pouvez saisir des notes que pour vos sous-modules assignés." });
     }
 
+    console.log("✅ Accès accordé !");
     next();
   } catch (error) {
+    console.log("❌ ERREUR INTERNE :", error.message);
     res.status(500).json({ message: error.message });
   }
 };

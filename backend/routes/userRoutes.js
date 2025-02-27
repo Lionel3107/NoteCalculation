@@ -36,6 +36,41 @@ router.put("/assign-sousmodule/:professeurId", verifyToken, isChefDepartement, a
     }
   });
 
+// ➤ Mettre à jour tous les sous-modules d'un Professeur (Réservé aux Chefs de Département)
+router.put("/update-sousmodules/:professeurId", verifyToken, isChefDepartement, async (req, res) => {
+  try {
+    const { professeurId } = req.params;
+    const { sousModulesEnseignes } = req.body;
+
+    // Vérifier si l'ID est valide
+    if (!mongoose.Types.ObjectId.isValid(professeurId)) {
+      return res.status(400).json({ message: "ID du professeur invalide." });
+    }
+
+    const professeur = await User.findById(professeurId);
+    if (!professeur || professeur.role !== "Professeur") {
+      return res.status(404).json({ message: "Professeur non trouvé." });
+    }
+
+    // Vérifier que le professeur appartient bien au département du chef de département
+    if (professeur.departementCode !== req.user.departementCode) {
+      return res.status(403).json({ message: "Vous ne pouvez modifier que les professeurs de votre département." });
+    }
+
+    console.log(`📌 Mise à jour des sous-modules du Professeur ${professeur.nom} (${professeurId})`);
+    console.log(`📌 Nouveaux sous-modules :`, sousModulesEnseignes);
+
+    professeur.sousModulesEnseignes = sousModulesEnseignes;
+    await professeur.save();
+
+    res.json({ message: "Sous-modules mis à jour avec succès.", professeur });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
 // ➤ Ajouter un Professeur (Réservé aux Chefs de Département)
 router.post("/add-professeur", verifyToken, isChefDepartement, async (req, res) => {
     try {
