@@ -10,6 +10,7 @@ const Notes = () => {
   const [etudiants, setEtudiants] = useState([]);
   const [modules, setModules] = useState([]);
   const [editingNotes, setEditingNotes] = useState({}); // Stockage des notes en modification
+  const [editingPonderations, setEditingPonderations] = useState({});
   const [userRole, setUserRole] = useState(""); // Récupération du rôle de l'utilisateur
 
   // Fonction pour obtenir les semestres en fonction du niveau
@@ -59,43 +60,85 @@ const Notes = () => {
   const handleSaveNotes = (matricule, sousModuleCode) => {
     const token = localStorage.getItem("token");
 
-    console.log("🟢 Token envoyé :", token);
-    console.log("📌 Matricule envoyé :", matricule);
-    console.log("📌 Sous-module envoyé :", sousModuleCode);
-    console.log("📌 Données envoyées :", editingNotes[matricule]?.[sousModuleCode]);
-
     if (!token) {
-      alert("❌ Vous devez être connecté pour modifier une note !");
-      return;
+        alert("❌ Vous devez être connecté pour modifier une note !");
+        return;
     }
 
-    // Vérifier que les notes existent
-    const notesToSend = Object.values(editingNotes[matricule]?.[sousModuleCode] || {});
-    
-    // Définir les pondérations associées (exemple : réparties équitablement)
-    const ponderations = Array(notesToSend.length).fill(100 / notesToSend.length);
+    // Récupérer les notes et convertir en nombres
+    let notesToSend = Object.values(editingNotes[matricule]?.[sousModuleCode] || {}).map(value => Number(value));
+
+    // Vérifier que toutes les valeurs sont bien des nombres
+    if (notesToSend.some(isNaN) || notesToSend.length === 0) {
+        alert("❌ Une ou plusieurs notes ne sont pas valides !");
+        return;
+    }
+
+    // Vérification des pondérations
+    let ponderations = Object.values(editingPonderations[matricule]?.[sousModuleCode] || {}).map(value => Number(value));
+
+    // 🔥 **Correction : Si aucune pondération, on répartit automatiquement**
+    if (ponderations.length === 0 || ponderations.some(isNaN)) {
+        ponderations = Array(notesToSend.length).fill(100 / notesToSend.length);
+    }
+
+    // ✅ **Correction : S'assurer que notes et pondérations ont la même longueur**
+    while (ponderations.length < notesToSend.length) {
+        ponderations.push(100 / notesToSend.length);
+    }
+
+    while (notesToSend.length < ponderations.length) {
+        notesToSend.push(0);  // Ajouter une note par défaut si manquante
+    }
+
+    // Vérifier que la somme des pondérations fait bien 100%
+    const totalPonderation = ponderations.reduce((acc, val) => acc + val, 0);
+    if (totalPonderation !== 100) {
+        alert(`❌ La somme des pondérations doit être égale à 100% (actuellement ${totalPonderation}%)`);
+        return;
+    }
+
+    console.log("📌 Données envoyées :", {
+    notes: notesToSend,
+    ponderations: ponderations,
+    sousModuleCode: sousModuleCode
+});
 
     axios.put(`http://localhost:5000/api/notes/${matricule}/${sousModuleCode}`, {
-      notes: notesToSend,
-      ponderations: ponderations, // 🔥 Ajout des pondérations
-      sousModuleCode: sousModuleCode
+        notes: notesToSend,
+        ponderations: ponderations,
+        sousModuleCode: sousModuleCode
     }, {
-      headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
     })
     .then(() => {
-      alert("✅ Notes mises à jour !");
-      setEditingNotes((prev) => {
-        const updatedNotes = { ...prev };
-        delete updatedNotes[matricule][sousModuleCode];
-        return updatedNotes;
-      });
+        alert("✅ Notes mises à jour !");
+        setEditingNotes((prev) => {
+            const updatedNotes = { ...prev };
+            delete updatedNotes[matricule][sousModuleCode];
+            return updatedNotes;
+        });
     })
     .catch((err) => {
-      console.error("❌ Erreur lors de l'enregistrement :", err.response?.data || err);
-      alert("❌ Erreur lors de l'enregistrement des notes !");
+        console.error("❌ Erreur lors de l'enregistrement :", err.response?.data || err);
+        alert("❌ Erreur lors de l'enregistrement des notes !");
     });
 };
 
+
+  // Gérer la modification locale des pondérations avant envoi
+  const handlePonderationChange = (matricule, sousModuleCode, index, value) => {
+    setEditingPonderations((prev) => ({
+        ...prev,
+        [matricule]: {
+            ...prev[matricule],
+            [sousModuleCode]: {
+                ...prev[matricule]?.[sousModuleCode],
+                [index]: Number(value), // Assure que la pondération est un nombre
+            },
+        },
+    }));
+};
 
 
   return (
@@ -152,6 +195,7 @@ const Notes = () => {
                 <TableCell>{etudiant.matricule}</TableCell>
                 <TableCell>{etudiant.nom}</TableCell>
                 <TableCell>{etudiant.prenom}</TableCell>
+
                 {modules.flatMap((module) =>
                   module.sousModules.map((sousModule, index) => (
                     <TableCell key={sousModule.code}>
