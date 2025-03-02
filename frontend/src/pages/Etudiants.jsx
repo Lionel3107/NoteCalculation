@@ -6,16 +6,23 @@ import "../styles/etudiants.css";
 const Etudiants = () => {
   const [departement, setDepartement] = useState("INFO");
   const [niveau, setNiveau] = useState("L1");
+  const [semestre, setSemestre] = useState("1"); // Ajout de l'état du semestre
   const [etudiants, setEtudiants] = useState([]);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [currentStudent, setCurrentStudent] = useState(null);
 
   // Charger la liste des étudiants selon le département et le niveau
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/departements/${departement}/${niveau}`)
-      .then((res) => setEtudiants(res.data.students))
-      .catch((err) => console.error("❌ Erreur API :", err));
-  }, [departement, niveau]);
+    if (!departement || !niveau || !semestre) return;
+  
+    axios.get(`http://localhost:5000/api/departements/${departement}/${niveau}/semestre/${semestre}/etudiants`)
+      .then((res) => {
+        console.log("🟢 Étudiants récupérés :", res.data.students); // 🔍 DEBUG
+        setEtudiants(res.data.students);
+      })
+      .catch((err) => console.error("❌ Erreur lors du chargement des étudiants :", err));
+  }, [departement, niveau, semestre]);
+  
 
   // Ouvrir la boîte de dialogue de modification
   const handleOpenEditDialog = (student) => {
@@ -84,9 +91,20 @@ const Etudiants = () => {
           <MenuItem value="L2">L2</MenuItem>
           <MenuItem value="L3">L3</MenuItem>
         </Select>
+
+        {/* <Select value={semestre} onChange={(e) => setSemestre(e.target.value)}>
+          <MenuItem value="1">Semestre 1</MenuItem>
+          <MenuItem value="2">Semestre 2</MenuItem>
+          <MenuItem value="3">Semestre 3</MenuItem>
+          <MenuItem value="4">Semestre 4</MenuItem>
+          <MenuItem value="5">Semestre 5</MenuItem>
+          <MenuItem value="6">Semestre 6</MenuItem>
+        </Select> */}
+
       </div>
 
       {/* Tableau des étudiants */}
+      
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
