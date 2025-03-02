@@ -10,7 +10,8 @@ const Etudiants = () => {
   const [etudiants, setEtudiants] = useState([]);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [currentStudent, setCurrentStudent] = useState(null);
-
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [newStudent, setNewStudent] = useState({ matricule: "", nom: "", prenom: "", email: "" });
   // Charger la liste des étudiants selon le département et le niveau
   useEffect(() => {
     if (!departement || !niveau || !semestre) return;
@@ -35,7 +36,47 @@ const Etudiants = () => {
     setOpenEditDialog(false);
     setCurrentStudent(null);
   };
+   // Ouvrir la boîte de dialogue d'ajout
+   const handleOpenAddDialog = () => {
+    setOpenAddDialog(true);
+  };
 
+  // Fermer la boîte de dialogue d'ajout
+  const handleCloseAddDialog = () => {
+    setOpenAddDialog(false);
+    setNewStudent({ matricule: "", nom: "", prenom: "", email: "" });
+  };
+
+  const handleAddStudent = () => {
+    if (!newStudent.matricule || !newStudent.nom || !newStudent.prenom || !newStudent.email) {
+      alert("⚠️ Tous les champs sont obligatoires !");
+      return;
+    }
+  
+    const studentData = {
+      ...newStudent,
+      departementCode: departement, // On prend la valeur sélectionnée
+      niveau: niveau // On prend la valeur sélectionnée
+    };
+  
+    console.log("🔍 Données envoyées :", studentData); // Vérification avant envoi
+  
+    const token = localStorage.getItem("token");
+    axios.post("http://localhost:5000/api/students", studentData, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      alert("✅ Étudiant ajouté avec succès !");
+      setEtudiants([...etudiants, res.data]);
+      handleCloseAddDialog();
+    })
+    .catch((err) => {
+      console.error("❌ Erreur lors de l'ajout :", err);
+      console.error("🔍 Réponse du serveur :", err.response?.data);
+      alert("❌ Erreur lors de l'ajout ! Vérifiez les données.");
+    });
+  };
+  
   // Modifier les informations d'un étudiant
   const handleEditStudent = () => {
     const token = localStorage.getItem("token");
@@ -77,7 +118,7 @@ const Etudiants = () => {
   return (
     <Container className="container">
       <Typography variant="h4">Gestion des Étudiants</Typography>
-
+      
       {/* Filtres */}
       <div className="filters">
         <Select value={departement} onChange={(e) => setDepartement(e.target.value)}>
@@ -125,6 +166,9 @@ const Etudiants = () => {
                   <TableCell>{etudiant.prenom}</TableCell>
                   <TableCell>{etudiant.email}</TableCell>
                   <TableCell>
+                  <Button variant="outlined" color="primary" onClick={handleOpenAddDialog} style={{ margin: "10px" }}>
+                    Ajouter un étudiant
+                  </Button>
                     <Button variant="outlined" color="primary" onClick={() => handleOpenEditDialog(etudiant)}>
                       Modifier
                     </Button>
@@ -143,6 +187,22 @@ const Etudiants = () => {
         </Table>
       </TableContainer>
 
+      {/* Fenêtre modale pour ajouter un étudiant */}
+      
+      <Dialog open={openAddDialog} onClose={handleCloseAddDialog}>
+        <DialogTitle>Ajouter un étudiant</DialogTitle>
+        <DialogContent>
+          <TextField label="Matricule" value={newStudent.matricule} onChange={(e) => setNewStudent({ ...newStudent, matricule: e.target.value })} fullWidth />
+          <TextField label="Nom" value={newStudent.nom} onChange={(e) => setNewStudent({ ...newStudent, nom: e.target.value })} fullWidth />
+          <TextField label="Prénom" value={newStudent.prenom} onChange={(e) => setNewStudent({ ...newStudent, prenom: e.target.value })} fullWidth />
+          <TextField label="Email" value={newStudent.email} onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })} fullWidth />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddDialog} color="secondary">Annuler</Button>
+          <Button onClick={handleAddStudent} color="primary">Ajouter</Button>
+        </DialogActions>
+      </Dialog>
+      
       {/* Fenêtre modale pour modifier un étudiant */}
       {currentStudent && (
         <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
