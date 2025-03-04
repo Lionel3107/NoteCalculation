@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Container, Typography, Select, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Button } from "@mui/material";
+import { 
+  Container, 
+  Typography, 
+  Select, 
+  MenuItem, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Paper, 
+  TextField, 
+  Button, 
+  Box, 
+  Grid 
+} from "@mui/material";
 import "../styles/notes.css";
+import SousModuleForm from "../components/SousModuleForm"; // Importer notre composant
+import ModuleGlobalForm from "../components/ModuleGlobalForm"; // Importer notre composant
 
 const Notes = () => {
   const [departement, setDepartement] = useState("INFO");
@@ -9,9 +27,9 @@ const Notes = () => {
   const [semestre, setSemestre] = useState("1");
   const [etudiants, setEtudiants] = useState([]);
   const [modules, setModules] = useState([]);
-  const [editingNotes, setEditingNotes] = useState({}); // Stockage des notes en modification
-  const [editingPonderations, setEditingPonderations] = useState({});
-  const [userRole, setUserRole] = useState(""); // Récupération du rôle de l'utilisateur
+  const [editingNotes, setEditingNotes] = useState({});
+  const [userRole, setUserRole] = useState("");
+  const [selectedEtudiant, setSelectedEtudiant] = useState(null); // Pour gérer la saisie détaillée
 
   // Fonction pour obtenir les semestres en fonction du niveau
   const getSemestresForNiveau = (niveau) => {
@@ -23,7 +41,7 @@ const Notes = () => {
     }
   };
 
-  // Charger les étudiants, modules et notes
+  // Charger les étudiants, modules et rôle utilisateur
   useEffect(() => {
     if (!departement || !niveau || !semestre) return;
 
@@ -42,104 +60,100 @@ const Notes = () => {
       .catch((err) => console.error("❌ Erreur récupération utilisateur :", err));
   }, [departement, niveau, semestre]);
 
-  // Gérer la modification locale des notes avant envoi
-  const handleNoteChange = (matricule, sousModuleCode, value, index) => {
+  // Gérer la modification locale des notes (présence, participation, tests)
+  const handleNoteChange = (matricule, sousModuleCode, type, value) => {
     setEditingNotes((prev) => ({
       ...prev,
       [matricule]: {
         ...prev[matricule],
         [sousModuleCode]: {
           ...prev[matricule]?.[sousModuleCode],
-          [index]: value,
+          [type]: value,
         },
       },
     }));
   };
 
+  // Calculer la moyenne d'un sous-module (pondérations : Présence 20%, Participation 20%, Tests 50% sur 5 tests de 10%)
+  const calculerMoyenneSousModule = (notes) => {
+    const { presence, participation, test1, test2, test3, test4, test5 } = notes;
+    const pres = parseFloat(presence) || 0;
+    const part = parseFloat(participation) || 0;
+    const t1 = parseFloat(test1) || 0;
+    const t2 = parseFloat(test2) || 0;
+    const t3 = parseFloat(test3) || 0;
+    const t4 = parseFloat(test4) || 0;
+    const t5 = parseFloat(test5) || 0;
+
+    const moyenne = (pres * 0.2 + part * 0.2 + (t1 + t2 + t3 + t4 + t5) * 0.1);
+    return isNaN(moyenne) ? 0 : Math.min(20, Math.max(0, moyenne)); // Limiter entre 0 et 20
+  };
+
+  // Calculer la moyenne globale pondérée par crédits
+  const calculerMoyenneGlobale = (etudiant, modulesData) => {
+    const totalPondere = modulesData.reduce((acc, module) => {
+      const moduleNotes = etudiant.notes?.[module.code] || {};
+      const moduleMoyenne = Object.values(moduleNotes).reduce((sum, notes) => {
+        return sum + calculerMoyenneSousModule(notes);
+      }, 0) / (module.sousModules.length || 1);
+      return acc + (moduleMoyenne * module.credits);
+    }, 0);
+    const totalCredits = modulesData.reduce((acc, module) => acc + module.credits, 0);
+    return totalCredits ? totalPondere / totalCredits : 0;
+  };
+
   // Sauvegarder les notes modifiées
   const handleSaveNotes = (matricule, sousModuleCode) => {
     const token = localStorage.getItem("token");
-
     if (!token) {
-        alert("❌ Vous devez être connecté pour modifier une note !");
-        return;
+      alert("❌ Vous devez être connecté pour modifier une note !");
+      return;
     }
 
-    // Récupérer les notes et convertir en nombres
-    let notesToSend = Object.values(editingNotes[matricule]?.[sousModuleCode] || {}).map(value => Number(value));
+    const notesToSend = editingNotes[matricule]?.[sousModuleCode] || {};
+    const moyenne = calculerMoyenneSousModule(notesToSend);
 
-    // Vérifier que toutes les valeurs sont bien des nombres
-    if (notesToSend.some(isNaN) || notesToSend.length === 0) {
-        alert("❌ Une ou plusieurs notes ne sont pas valides !");
-        return;
+    if (!notesToSend.presence || !notesToSend.participation || 
+        !notesToSend.test1 || !notesToSend.test2 || !notesToSend.test3 || 
+        !notesToSend.test4 || !notesToSend.test5) {
+      alert("❌ Toutes les notes (présence, participation, tests) doivent être remplies !");
+      return;
     }
-
-    // Vérification des pondérations
-    let ponderations = Object.values(editingPonderations[matricule]?.[sousModuleCode] || {}).map(value => Number(value));
-
-    // 🔥 **Correction : Si aucune pondération, on répartit automatiquement**
-    if (ponderations.length === 0 || ponderations.some(isNaN)) {
-        ponderations = Array(notesToSend.length).fill(100 / notesToSend.length);
-    }
-
-    // ✅ **Correction : S'assurer que notes et pondérations ont la même longueur**
-    while (ponderations.length < notesToSend.length) {
-        ponderations.push(100 / notesToSend.length);
-    }
-
-    while (notesToSend.length < ponderations.length) {
-        notesToSend.push(0);  // Ajouter une note par défaut si manquante
-    }
-
-    // Vérifier que la somme des pondérations fait bien 100%
-    const totalPonderation = ponderations.reduce((acc, val) => acc + val, 0);
-    if (totalPonderation !== 100) {
-        alert(`❌ La somme des pondérations doit être égale à 100% (actuellement ${totalPonderation}%)`);
-        return;
-    }
-
-    console.log("📌 Données envoyées :", {
-    notes: notesToSend,
-    ponderations: ponderations,
-    sousModuleCode: sousModuleCode
-});
 
     axios.put(`http://localhost:5000/api/notes/${matricule}/${sousModuleCode}`, {
-        notes: notesToSend,
-        ponderations: ponderations,
-        sousModuleCode: sousModuleCode
+      ...notesToSend,
+      moyenne,
     }, {
-        headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     })
     .then(() => {
-        alert("✅ Notes mises à jour !");
-        setEditingNotes((prev) => {
-            const updatedNotes = { ...prev };
-            delete updatedNotes[matricule][sousModuleCode];
-            return updatedNotes;
-        });
+      alert("✅ Notes mises à jour !");
+      setEditingNotes((prev) => {
+        const updatedNotes = { ...prev };
+        delete updatedNotes[matricule][sousModuleCode];
+        return updatedNotes;
+      });
     })
     .catch((err) => {
-        console.error("❌ Erreur lors de l'enregistrement :", err.response?.data || err);
-        alert("❌ Erreur lors de l'enregistrement des notes !");
+      console.error("❌ Erreur lors de l'enregistrement :", err.response?.data || err);
+      alert("❌ Erreur lors de l'enregistrement des notes !");
     });
-};
+  };
 
+  // Afficher le formulaire détaillé pour un étudiant et un sous-module spécifique
+  const openSousModuleForm = (etudiant, sousModule) => {
+    setSelectedEtudiant({ ...etudiant, sousModule });
+  };
 
-  // Gérer la modification locale des pondérations avant envoi
-  const handlePonderationChange = (matricule, sousModuleCode, index, value) => {
-    setEditingPonderations((prev) => ({
-        ...prev,
-        [matricule]: {
-            ...prev[matricule],
-            [sousModuleCode]: {
-                ...prev[matricule]?.[sousModuleCode],
-                [index]: Number(value), // Assure que la pondération est un nombre
-            },
-        },
-    }));
-};
+  const convertirEnGrade = (moyenne) => {
+    if (moyenne >= 16) return 'A';
+    if (moyenne >= 14) return 'B';
+    if (moyenne >= 12) return 'C';
+    if (moyenne >= 10) return 'D';
+    return 'F';
+  };
 
+  const estReussi = (moyenne) => moyenne >= 10;
 
   return (
     <Container className="container">
@@ -176,10 +190,12 @@ const Notes = () => {
               <TableCell rowSpan={2}>Prénom</TableCell>
               {modules.map((module) => (
                 <TableCell key={module.code} colSpan={module.sousModules.length}>
-                  {module.nom}
+                  {module.nom} (Crédits: {module.credits})
                 </TableCell>
               ))}
-              <TableCell rowSpan={2}>Moyenne Module Global</TableCell>
+              <TableCell rowSpan={2}>Moyenne Globale</TableCell>
+              <TableCell rowSpan={2}>Grade</TableCell>
+              <TableCell rowSpan={2}>Statut</TableCell>
             </TableRow>
             <TableRow>
               {modules.flatMap((module) =>
@@ -190,44 +206,62 @@ const Notes = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {etudiants.map((etudiant) => (
-              <TableRow key={etudiant.matricule}>
-                <TableCell>{etudiant.matricule}</TableCell>
-                <TableCell>{etudiant.nom}</TableCell>
-                <TableCell>{etudiant.prenom}</TableCell>
+            {etudiants.map((etudiant) => {
+              const moyenneGlobale = calculerMoyenneGlobale(etudiant, modules);
+              const grade = convertirEnGrade(moyenneGlobale);
+              const statut = estReussi(moyenneGlobale) ? "PASS" : "FAIL";
 
-                {modules.flatMap((module) =>
-                  module.sousModules.map((sousModule, index) => (
-                    <TableCell key={sousModule.code}>
-                      {userRole === "Professeur" ? (
-                        <TextField
-                          type="number"
-                          value={editingNotes[etudiant.matricule]?.[sousModule.code]?.[index] ?? ""}
-                          onChange={(e) => handleNoteChange(etudiant.matricule, sousModule.code, e.target.value, index)}
-                          size="small"
-                        />
-                      ) : (
-                        etudiant.notes?.[sousModule.code]?.[index] ?? "N/A"
-                      )}
-                    </TableCell>
-                  ))
-                )}
-                {userRole === "Professeur" && (
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleSaveNotes(etudiant.matricule, modules[0].sousModules[0].code)}
-                    >
-                      Enregistrer
-                    </Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
+              return (
+                <TableRow key={etudiant.matricule}>
+                  <TableCell>{etudiant.matricule}</TableCell>
+                  <TableCell>{etudiant.nom}</TableCell>
+                  <TableCell>{etudiant.prenom}</TableCell>
+
+                  {modules.flatMap((module) =>
+                    module.sousModules.map((sousModule, index) => (
+                      <TableCell key={sousModule.code}>
+                        {userRole === "Professeur" ? (
+                          <Button 
+                            variant="outlined" 
+                            onClick={() => openSousModuleForm(etudiant, sousModule)}
+                          >
+                            Modifier
+                          </Button>
+                        ) : (
+                          etudiant.notes?.[sousModule.code]?.moyenne?.toFixed(2) ?? "N/A"
+                        )}
+                      </TableCell>
+                    ))
+                  )}
+                  <TableCell>{moyenneGlobale.toFixed(2)}</TableCell>
+                  <TableCell sx={{ color: statut === "PASS" ? "green" : "red" }}>{grade}</TableCell>
+                  <TableCell sx={{ color: statut === "PASS" ? "green" : "red" }}>{statut}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Formulaire détaillé pour la saisie (modal ou popup) */}
+      {selectedEtudiant && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h5">Saisie des notes pour {selectedEtudiant.nom} {selectedEtudiant.prenom}</Typography>
+          <SousModuleForm 
+            sousModuleNom={selectedEtudiant.sousModule.nom} 
+            onSave={(data) => handleSaveNotes(selectedEtudiant.matricule, selectedEtudiant.sousModule.code, data)}
+            initialNotes={etudiants.find(e => e.matricule === selectedEtudiant.matricule)?.notes?.[selectedEtudiant.sousModule.code]}
+          />
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            onClick={() => setSelectedEtudiant(null)}
+            sx={{ mt: 2 }}
+          >
+            Fermer
+          </Button>
+        </Box>
+      )}
     </Container>
   );
 };
