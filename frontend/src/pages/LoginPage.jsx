@@ -1,34 +1,93 @@
-import React, { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/login.css";
+import "../styles/login.css"; // Importation du CSS
+import Logo from "../assets/logo.jpg";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
 
 const LoginPage = () => {
-  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      await login(email, password);
-      navigate("/dashboard");
-    } catch (error) {
-      alert("Échec de connexion");
+
+    if (!email || !password) {
+      setError("Veuillez remplir tous les champs.");
+      return;
     }
+
+    if (email === "admin@example.com" && password === "password123") {
+      navigate("/upload"); // Redirection après connexion réussie
+    } else {
+      setError("Identifiants incorrects !");
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     <div className="login-container">
-      <h2>Bienvenue 👋</h2>
-      <p>Veuillez entrer vos identifiants</p>
-      <form className="login-form" onSubmit={handleLogin}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <button type="submit">Se connecter</button>
-      </form>
-      <a href="#" className="forgot-password">Mot de passe oublié ?</a>
+      <div className="login-card">
+        {/* Logo */}
+        <img src={Logo} alt="Logo" className="login-logo" />
+
+        <h3 className="login-title">Login</h3>
+
+        {/* Message d'erreur */}
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          {/* Email */}
+          <div className="mb-3">
+            <label className="form-label">Email Address</label>
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your Email Address"
+            />
+          </div>
+
+          {/* Mot de passe */}
+          <div className="mb-3">
+            <a className="forgot-password" href="#">Forgot password?</a>
+            <label className="form-label">Password</label>
+            <div className="input-group">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"} // Accessibility
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+
+          {/* Bouton de connexion */}
+          <button type="submit" className="login-btn w-100">
+            Log in
+          </button>
+        </form>
+
+        {/* Lien vers l'inscription */}
+        <p className="login-link">
+          Don't have an account? <a href="/register">Sign in</a>
+        </p>
+      </div>
     </div>
   );
 };
