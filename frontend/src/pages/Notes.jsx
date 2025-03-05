@@ -14,12 +14,10 @@ import {
   Paper, 
   TextField, 
   Button, 
-  Box, 
-  Grid 
+  Box 
 } from "@mui/material";
 import "../styles/notes.css";
 import SousModuleForm from "../components/SousModuleForm"; // Importer notre composant
-import ModuleGlobalForm from "../components/ModuleGlobalForm"; // Importer notre composant
 
 const Notes = () => {
   const [departement, setDepartement] = useState("INFO");
@@ -60,7 +58,7 @@ const Notes = () => {
       .catch((err) => console.error("❌ Erreur récupération utilisateur :", err));
   }, [departement, niveau, semestre]);
 
-  // Gérer la modification locale des notes (présence, participation, tests)
+  // Gérer la modification locale des notes (présence, participation, tests) - Optionnel, peut être retiré si on utilise uniquement SousModuleForm
   const handleNoteChange = (matricule, sousModuleCode, type, value) => {
     setEditingNotes((prev) => ({
       ...prev,
@@ -74,65 +72,68 @@ const Notes = () => {
     }));
   };
 
-  // Calculer la moyenne d'un sous-module (pondérations : Présence 20%, Participation 20%, Tests 50% sur 5 tests de 10%)
-  const calculerMoyenneSousModule = (notes) => {
-    const { presence, participation, test1, test2, test3, test4, test5 } = notes;
+  // Calculer la moyenne d'un sous-module (pondérations personnalisées + présence 10%, participation 5%)
+  const calculerMoyenneSousModule = (notes, ponderations) => {
+    const { presence, participation } = notes;
+    const noteValues = notes.notes || [];
+    const pondValues = ponderations || Array(noteValues.length).fill(100 / noteValues.length); // Pondérations par défaut si none
+
     const pres = parseFloat(presence) || 0;
     const part = parseFloat(participation) || 0;
-    const t1 = parseFloat(test1) || 0;
-    const t2 = parseFloat(test2) || 0;
-    const t3 = parseFloat(test3) || 0;
-    const t4 = parseFloat(test4) || 0;
-    const t5 = parseFloat(test5) || 0;
+    const totalPondNotes = pondValues.reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
 
-    const moyenne = (pres * 0.2 + part * 0.2 + (t1 + t2 + t3 + t4 + t5) * 0.1);
-    return isNaN(moyenne) ? 0 : Math.min(20, Math.max(0, moyenne)); // Limiter entre 0 et 20
+    if (totalPondNotes !== 85) { // Les notes doivent totaliser 85% (présence 10%, participation 5%)
+      console.warn("Les pondérations des notes ne totalisent pas 85%");
+      return 0;
+    }
+
+    const weightedSum = noteValues.reduce((acc, note, i) => 
+      acc + (parseFloat(note) || 0) * (parseFloat(pondValues[i]) / 100), 0) +
+      (pres * 0.1) + (part * 0.05);
+    
+    return Math.min(20, Math.max(0, weightedSum)); // Limiter entre 0 et 20
   };
 
   // Calculer la moyenne globale pondérée par crédits
   const calculerMoyenneGlobale = (etudiant, modulesData) => {
     const totalPondere = modulesData.reduce((acc, module) => {
       const moduleNotes = etudiant.notes?.[module.code] || {};
+      const modulePonderations = module.notes?.ponderations || []; // Si pondérations définies au niveau module
       const moduleMoyenne = Object.values(moduleNotes).reduce((sum, notes) => {
-        return sum + calculerMoyenneSousModule(notes);
+        return sum + calculerMoyenneSousModule(notes, modulePonderations);
       }, 0) / (module.sousModules.length || 1);
-      return acc + (moduleMoyenne * module.credits);
+      return acc + (moduleMoyenne * (module.credits || 1));
     }, 0);
-    const totalCredits = modulesData.reduce((acc, module) => acc + module.credits, 0);
+    const totalCredits = modulesData.reduce((acc, module) => acc + (module.credits || 1), 0);
     return totalCredits ? totalPondere / totalCredits : 0;
   };
 
-  // Sauvegarder les notes modifiées
-  const handleSaveNotes = (matricule, sousModuleCode) => {
+  // Sauvegarder les notes modifiées via SousModuleForm
+  const handleSaveNotes = (matricule, sousModuleCode, data) => {
     const token = localStorage.getItem("token");
     if (!token) {
       alert("❌ Vous devez être connecté pour modifier une note !");
       return;
     }
 
-    const notesToSend = editingNotes[matricule]?.[sousModuleCode] || {};
-    const moyenne = calculerMoyenneSousModule(notesToSend);
-
-    if (!notesToSend.presence || !notesToSend.participation || 
-        !notesToSend.test1 || !notesToSend.test2 || !notesToSend.test3 || 
-        !notesToSend.test4 || !notesToSend.test5) {
-      alert("❌ Toutes les notes (présence, participation, tests) doivent être remplies !");
-      return;
-    }
+    const moyenne = calculerMoyenneSousModule(data, data.ponderations);
 
     axios.put(`http://localhost:5000/api/notes/${matricule}/${sousModuleCode}`, {
-      ...notesToSend,
+      presence: data.presence,
+      participation: data.participation,
+      notes: data.notes,
+      ponderations: data.ponderations,
       moyenne,
     }, {
       headers: { Authorization: `Bearer ${token}` },
     })
     .then(() => {
       alert("✅ Notes mises à jour !");
-      setEditingNotes((prev) => {
-        const updatedNotes = { ...prev };
-        delete updatedNotes[matricule][sousModuleCode];
-        return updatedNotes;
-      });
+      setSelectedEtudiant(null);
+      // Rafraîchir les données
+      axios.get(`http://localhost:5000/api/departements/${departement}/${niveau}/semestre/${semestre}/etudiants`)
+        .then((res) => setEtudiants(res.data.students))
+        .catch((err) => console.error("❌ Erreur lors du rechargement :", err));
     })
     .catch((err) => {
       console.error("❌ Erreur lors de l'enregistrement :", err.response?.data || err);
@@ -142,9 +143,19 @@ const Notes = () => {
 
   // Afficher le formulaire détaillé pour un étudiant et un sous-module spécifique
   const openSousModuleForm = (etudiant, sousModule) => {
-    setSelectedEtudiant({ ...etudiant, sousModule });
+    setSelectedEtudiant({ 
+      ...etudiant, 
+      sousModule, 
+      initialNotes: etudiant.notes?.[sousModule.code] || {
+        presence: '',
+        participation: '',
+        notes: [''],
+        ponderations: [''],
+      }
+    });
   };
 
+  // Convertir la moyenne en grade
   const convertirEnGrade = (moyenne) => {
     if (moyenne >= 16) return 'A';
     if (moyenne >= 14) return 'B';
@@ -153,6 +164,7 @@ const Notes = () => {
     return 'F';
   };
 
+  // Vérifier si l'étudiant a réussi
   const estReussi = (moyenne) => moyenne >= 10;
 
   return (
@@ -190,7 +202,7 @@ const Notes = () => {
               <TableCell rowSpan={2}>Prénom</TableCell>
               {modules.map((module) => (
                 <TableCell key={module.code} colSpan={module.sousModules.length}>
-                  {module.nom} (Crédits: {module.credits})
+                  {module.nom} (Crédits: {module.credits || 1})
                 </TableCell>
               ))}
               <TableCell rowSpan={2}>Moyenne Globale</TableCell>
@@ -218,7 +230,7 @@ const Notes = () => {
                   <TableCell>{etudiant.prenom}</TableCell>
 
                   {modules.flatMap((module) =>
-                    module.sousModules.map((sousModule, index) => (
+                    module.sousModules.map((sousModule) => (
                       <TableCell key={sousModule.code}>
                         {userRole === "Professeur" ? (
                           <Button 
@@ -245,12 +257,12 @@ const Notes = () => {
 
       {/* Formulaire détaillé pour la saisie (modal ou popup) */}
       {selectedEtudiant && (
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: 3, p: 2, border: '1px solid #ccc' }}>
           <Typography variant="h5">Saisie des notes pour {selectedEtudiant.nom} {selectedEtudiant.prenom}</Typography>
           <SousModuleForm 
             sousModuleNom={selectedEtudiant.sousModule.nom} 
             onSave={(data) => handleSaveNotes(selectedEtudiant.matricule, selectedEtudiant.sousModule.code, data)}
-            initialNotes={etudiants.find(e => e.matricule === selectedEtudiant.matricule)?.notes?.[selectedEtudiant.sousModule.code]}
+            initialNotes={selectedEtudiant.initialNotes}
           />
           <Button 
             variant="contained" 

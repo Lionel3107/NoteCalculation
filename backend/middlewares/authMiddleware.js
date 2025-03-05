@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
 
-
 exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   console.log("🔍 Header Authorization reçu :", authHeader); // 🔥 DEBUG
@@ -23,7 +22,6 @@ exports.verifyToken = (req, res, next) => {
     next();
   });
 };
-
 
 // ➤ Vérification des rôles
 exports.isDirecteur = (req, res, next) => {
@@ -48,11 +46,11 @@ exports.isSecretaire = (req, res, next) => {
 
 // Ceux qui peuvent voir les notes
 exports.canViewNotes = (req, res, next) => {
-    const rolesAutorisés = ["Directeur", "ChefDepartement", "Professeur", "Secretaire"];
-    if (!rolesAutorisés.includes(req.user.role)) {
-      return res.status(403).json({ message: "Accès interdit. Vous n'êtes pas autorisé à consulter les notes." });
-    }
-    next();
+  const rolesAutorisés = ["Directeur", "ChefDepartement", "Professeur", "Secretaire"];
+  if (!rolesAutorisés.includes(req.user.role)) {
+    return res.status(403).json({ message: "Accès interdit. Vous n'êtes pas autorisé à consulter les notes." });
+  }
+  next();
 };
 
 exports.canEnterNotes = async (req, res, next) => {
@@ -64,12 +62,19 @@ exports.canEnterNotes = async (req, res, next) => {
       return res.status(403).json({ message: "Accès interdit. Seuls les professeurs et chefs de département peuvent saisir des notes." });
     }
 
-    const { sousModuleCode } = req.body;
+    // Récupérer sousModuleCode depuis le body (pour POST /api/sous-modules ou /api/notes)
+    const sousModuleCode = req.body.sousModuleCode || req.body.sousModuleCode; // Peut être dans req.body ou req.params selon la route
     console.log("✅ Vérification du sous-module :", sousModuleCode);
 
     if (!sousModuleCode) {
       console.log("❌ ERREUR : Aucun sous-module reçu dans la requête !");
       return res.status(400).json({ message: "Erreur : Aucun sous-module spécifié." });
+    }
+
+    // Vérifier si sousModulesEnseignes existe et est un tableau
+    if (!req.user.sousModulesEnseignes || !Array.isArray(req.user.sousModulesEnseignes)) {
+      console.log("❌ ERREUR : sousModulesEnseignes non défini ou invalide pour l'utilisateur.");
+      return res.status(403).json({ message: "Accès interdit. Vos sous-modules assignés ne sont pas configurés correctement." });
     }
 
     console.log("📌 Sous-modules assignés à l'utilisateur :", req.user.sousModulesEnseignes);
@@ -85,4 +90,28 @@ exports.canEnterNotes = async (req, res, next) => {
     console.log("❌ ERREUR INTERNE :", error.message);
     res.status(500).json({ message: error.message });
   }
+};
+
+// Ajouter authenticateToken comme export explicite
+exports.authenticateToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  console.log("🔍 Header Authorization reçu (authenticateToken) :", authHeader); // 🔥 DEBUG
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.log("❌ Aucun token fourni (authenticateToken) !");
+    return res.status(403).json({ message: "🔴 Aucun token fourni." });
+  }
+
+  const token = authHeader.split(" ")[1]; // Extraction du token
+  console.log("🟢 Token extrait (authenticateToken) :", token); // 🔥 DEBUG
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.log("❌ Erreur de vérification du token (authenticateToken) :", err.message);
+      return res.status(401).json({ message: "🔴 Token invalide." });
+    }
+    req.user = decoded;
+    console.log("✅ Utilisateur authentifié (authenticateToken) :", req.user); // 🔥 DEBUG
+    next();
+  });
 };
