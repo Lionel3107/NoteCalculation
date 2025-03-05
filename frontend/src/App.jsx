@@ -3,8 +3,6 @@ import AppRoutes from "./routes/AppRoutes.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import "./styles/global.css";
 
-
-
 function App() {
   return (
     <AuthProvider>
