@@ -1,28 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import "../styles/login.css"; // Importation du CSS
-import Logo from "../assets/logo.jpg";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
+import "../styles/login.css"; // Utilisation du CSS existant
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Pour la visibilité du mot de passe
+import Logo from "../assets/logo.jpg"; // Ajuste le chemin selon ton projet (par ex. "../assets/bit-logo.png")
 
 const LoginPage = () => {
+  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError(""); // Réinitialiser l'erreur avant la tentative de connexion
 
     if (!email || !password) {
       setError("Veuillez remplir tous les champs.");
       return;
     }
 
-    if (email === "admin@example.com" && password === "password123") {
-      navigate("/upload"); // Redirection après connexion réussie
-    } else {
-      setError("Identifiants incorrects !");
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch (error) {
+      setError("Échec de connexion. Vérifiez vos identifiants ou essayez à nouveau.");
     }
   };
 
@@ -33,59 +37,62 @@ const LoginPage = () => {
   return (
     <div className="login-container">
       <div className="login-card">
-        {/* Logo */}
-        <img src={Logo} alt="Logo" className="login-logo" />
+        {/* Logo (remplace par ton logo "bit" ou ajuste le chemin) */}
+        <img 
+          src={Logo} // Ajuste le chemin selon ton projet (par ex. "../assets/bit-logo.png")
+          alt="bit Logo" 
+          className="login-logo" 
+        />
 
         <h3 className="login-title">Login</h3>
 
-        {/* Message d'erreur */}
-        {error && <div className="alert alert-danger">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          {/* Email */}
+        <form className="login-form" onSubmit={handleLogin}>
           <div className="mb-3">
-            <label className="form-label">Email Address</label>
-            <input
-              type="email"
-              className="form-control"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your Email Address"
+            <div className="form-label-group">
+              <label className="form-label">Email Address</label>
+            </div>
+            <input 
+              type="email" 
+              className="form-control" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="Enter your Email Address" 
+              required 
             />
           </div>
 
-          {/* Mot de passe */}
           <div className="mb-3">
-            <a className="forgot-password" href="#">Forgot password?</a>
-            <label className="form-label">Password</label>
-            <div className="input-group">
-              <input
-                type={showPassword ? "text" : "password"}
-                className="form-control"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+            <div className="password-group">
+              <label className="form-label">Password</label>
+              <a href="#" className="forgot-password">Forgot password?</a>
+            </div>
+            <div className="password-input-container">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className="form-control" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="Enter your password" 
+                required 
               />
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
+              <button 
+                type="button" 
+                className="password-toggle-btn" 
                 onClick={togglePasswordVisibility}
-                aria-label={showPassword ? "Hide password" : "Show password"} // Accessibility
+                aria-label={showPassword ? "Hide password" : "Show password"} // Accessibilité
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
           </div>
 
-          {/* Bouton de connexion */}
-          <button type="submit" className="login-btn w-100">
-            Log in
-          </button>
+          {error && <div className="login-error">{error}</div>}
+
+          <button type="submit" className="login-btn">Log in</button>
         </form>
 
-        {/* Lien vers l'inscription */}
         <p className="login-link">
-          Don't have an account? <a href="/register">Sign in</a>
+          Don’t have an account? <a href="/register">Sign in</a>
         </p>
       </div>
     </div>
