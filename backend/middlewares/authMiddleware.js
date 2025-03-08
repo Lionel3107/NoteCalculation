@@ -72,6 +72,7 @@ exports.canEnterNotes = async (req, res, next) => {
     }
 
     // Vérifier si sousModulesEnseignes existe et est un tableau
+    console.log("📌 Sous-modules assignés à l'utilisateur (avant vérification) :", req.user.sousModulesEnseignes);
     if (!req.user.sousModulesEnseignes || !Array.isArray(req.user.sousModulesEnseignes)) {
       console.log("❌ ERREUR : sousModulesEnseignes non défini ou invalide pour l'utilisateur.");
       return res.status(403).json({ message: "Accès interdit. Vos sous-modules assignés ne sont pas configurés correctement." });
@@ -81,7 +82,7 @@ exports.canEnterNotes = async (req, res, next) => {
 
     if (!req.user.sousModulesEnseignes.includes(sousModuleCode)) {
       console.log(`❌ Accès refusé : L'utilisateur n'enseigne pas le sous-module ${sousModuleCode}.`);
-      return res.status(403).json({ message: "Accès interdit. Vous ne pouvez saisir des notes que pour vos sous-modules assignés." });
+      return res.status(403).json({ message: "Accès interdit. Vous ne pouvez saisir des notes que pour vos matières assignés." });
     }
 
     console.log("✅ Accès accordé !");

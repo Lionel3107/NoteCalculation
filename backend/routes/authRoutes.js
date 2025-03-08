@@ -40,12 +40,12 @@ router.post("/login", async (req, res) => {
   
       // Générer un token JWT avec les sous-modules assignés
       const token = jwt.sign(
-        { id: user._id, role: user.role, departementCode: user.departementCode, sousModulesEnseignes: user.sousModulesEnseignes },
+        { id: user._id, role: user.role, departementCode: user.departementCode, sousModulesEnseignes: user.sousModulesEnseignes || [] },
         process.env.JWT_SECRET || "secret_key",
         { expiresIn: "1h" }
       );
   
-      res.json({ token, role: user.role });
+      res.json({ token, user: { id: user._id, role: user.role, email: user.email } });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

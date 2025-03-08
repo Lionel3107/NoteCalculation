@@ -101,7 +101,7 @@ const SousModuleForm = ({ sousModuleNom, onSave, initialNotes }) => {
         },
         body: JSON.stringify({
             etudiantMatricule: 'bs00016', // Récupérer dynamiquement
-            sousModuleCode: sousModuleNom.split(' ').join('').toUpperCase() + '101', // Ex. ALG101
+            sousModuleCode: sousModuleNom,
             notePresence: parseFloat(formData.presence),
             noteParticipation: parseFloat(formData.participation),
             notes: formData.notes.map((n) => parseFloat(n)),
