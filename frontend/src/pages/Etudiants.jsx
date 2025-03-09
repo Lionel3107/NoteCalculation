@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Typography, Select, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import "../styles/etudiants.css";
+import * as XLSX from 'xlsx';
 
 const Etudiants = () => {
   const [departement, setDepartement] = useState("INFO");
@@ -12,10 +13,12 @@ const Etudiants = () => {
   const [currentStudent, setCurrentStudent] = useState(null);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [newStudent, setNewStudent] = useState({ matricule: "", nom: "", prenom: "", email: "" });
+  const [studentsData, setStudentsData] = useState([]);
+
   // Charger la liste des étudiants selon le département et le niveau
   useEffect(() => {
     if (!departement || !niveau || !semestre) return;
-  
+
     axios.get(`http://localhost:5000/api/departements/${departement}/${niveau}/semestre/${semestre}/etudiants`)
       .then((res) => {
         console.log("🟢 Étudiants récupérés :", res.data.students); // 🔍 DEBUG
@@ -23,7 +26,7 @@ const Etudiants = () => {
       })
       .catch((err) => console.error("❌ Erreur lors du chargement des étudiants :", err));
   }, [departement, niveau, semestre]);
-  
+
 
   // Ouvrir la boîte de dialogue de modification
   const handleOpenEditDialog = (student) => {
@@ -36,8 +39,8 @@ const Etudiants = () => {
     setOpenEditDialog(false);
     setCurrentStudent(null);
   };
-   // Ouvrir la boîte de dialogue d'ajout
-   const handleOpenAddDialog = () => {
+  // Ouvrir la boîte de dialogue d'ajout
+  const handleOpenAddDialog = () => {
     setOpenAddDialog(true);
   };
 
@@ -52,46 +55,46 @@ const Etudiants = () => {
       alert("⚠️ Tous les champs sont obligatoires !");
       return;
     }
-  
+
     const studentData = {
       ...newStudent,
       departementCode: departement, // On prend la valeur sélectionnée
       niveau: niveau // On prend la valeur sélectionnée
     };
-  
+
     console.log("🔍 Données envoyées :", studentData); // Vérification avant envoi
-  
+
     const token = localStorage.getItem("token");
     axios.post("http://localhost:5000/api/students", studentData, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    .then((res) => {
-      alert("✅ Étudiant ajouté avec succès !");
-      setEtudiants([...etudiants, res.data]);
-      handleCloseAddDialog();
-    })
-    .catch((err) => {
-      console.error("❌ Erreur lors de l'ajout :", err);
-      console.error("🔍 Réponse du serveur :", err.response?.data);
-      alert("❌ Erreur lors de l'ajout ! Vérifiez les données.");
-    });
+      .then((res) => {
+        alert("✅ Étudiant ajouté avec succès !");
+        setEtudiants([...etudiants, res.data]);
+        handleCloseAddDialog();
+      })
+      .catch((err) => {
+        console.error("❌ Erreur lors de l'ajout :", err);
+        console.error("🔍 Réponse du serveur :", err.response?.data);
+        alert("❌ Erreur lors de l'ajout ! Vérifiez les données.");
+      });
   };
-  
+
   // Modifier les informations d'un étudiant
   const handleEditStudent = () => {
     const token = localStorage.getItem("token");
     axios.put(`http://localhost:5000/api/students/${currentStudent._id}`, currentStudent, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    .then((res) => {
-      alert("✅ Étudiant modifié avec succès !");
-      setEtudiants(etudiants.map(etudiant => etudiant._id === res.data._id ? res.data : etudiant));
-      handleCloseEditDialog();
-    })
-    .catch((err) => {
-      console.error("❌ Erreur lors de la modification :", err);
-      alert("❌ Erreur lors de la modification !");
-    });
+      .then((res) => {
+        alert("✅ Étudiant modifié avec succès !");
+        setEtudiants(etudiants.map(etudiant => etudiant._id === res.data._id ? res.data : etudiant));
+        handleCloseEditDialog();
+      })
+      .catch((err) => {
+        console.error("❌ Erreur lors de la modification :", err);
+        alert("❌ Erreur lors de la modification !");
+      });
   };
 
   // Supprimer un étudiant
@@ -105,20 +108,36 @@ const Etudiants = () => {
     axios.delete(`http://localhost:5000/api/students/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    .then(() => {
-      alert("✅ Étudiant supprimé avec succès !");
-      setEtudiants(etudiants.filter((etudiant) => etudiant._id !== id)); // Mise à jour dynamique
-    })
-    .catch((err) => {
-      console.error("❌ Erreur lors de la suppression :", err);
-      alert("❌ Erreur lors de la suppression !");
-    });
+      .then(() => {
+        alert("✅ Étudiant supprimé avec succès !");
+        setEtudiants(etudiants.filter((etudiant) => etudiant._id !== id)); // Mise à jour dynamique
+      })
+      .catch((err) => {
+        console.error("❌ Erreur lors de la suppression :", err);
+        alert("❌ Erreur lors de la suppression !");
+      });
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      setStudentsData(jsonData);
+      console.log(jsonData); // Affichez les données dans la console pour vérification
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   return (
     <Container className="container">
       <Typography variant="h4">Gestion des Étudiants</Typography>
-      
+
       {/* Filtres */}
       <div className="filters">
         <Select value={departement} onChange={(e) => setDepartement(e.target.value)}>
@@ -145,7 +164,7 @@ const Etudiants = () => {
       </div>
 
       {/* Tableau des étudiants */}
-      
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -166,9 +185,9 @@ const Etudiants = () => {
                   <TableCell>{etudiant.prenom}</TableCell>
                   <TableCell>{etudiant.email}</TableCell>
                   <TableCell>
-                  <Button variant="outlined" color="primary" onClick={handleOpenAddDialog} style={{ margin: "10px" }}>
-                    Ajouter un étudiant
-                  </Button>
+                    <Button variant="outlined" color="primary" onClick={handleOpenAddDialog} style={{ margin: "10px" }}>
+                      Ajouter un étudiant
+                    </Button>
                     <Button variant="outlined" color="primary" onClick={() => handleOpenEditDialog(etudiant)}>
                       Modifier
                     </Button>
@@ -188,7 +207,7 @@ const Etudiants = () => {
       </TableContainer>
 
       {/* Fenêtre modale pour ajouter un étudiant */}
-      
+
       <Dialog open={openAddDialog} onClose={handleCloseAddDialog}>
         <DialogTitle>Ajouter un étudiant</DialogTitle>
         <DialogContent>
@@ -202,7 +221,7 @@ const Etudiants = () => {
           <Button onClick={handleAddStudent} color="primary">Ajouter</Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Fenêtre modale pour modifier un étudiant */}
       {currentStudent && (
         <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
@@ -219,6 +238,10 @@ const Etudiants = () => {
           </DialogActions>
         </Dialog>
       )}
+
+      <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
+      {/* Affichez les données des étudiants ici si nécessaire */}
+      <pre>{JSON.stringify(studentsData, null, 2)}</pre>
     </Container>
   );
 };
