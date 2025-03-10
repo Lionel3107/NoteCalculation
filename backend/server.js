@@ -29,7 +29,6 @@ app.get("/", (_req, res) => {
 
 // ➤ Importation des routes
 const studentRoutes = require("./routes/studentRoutes");
-const moduleGlobalRoutes = require("./routes/moduleGlobalRoutes");
 const semestreRoutes = require("./routes/semestreRoutes");
 const departementRoutes = require("./routes/departementRoutes");
 const noteRoutes = require("./routes/noteRoutes");
@@ -39,7 +38,7 @@ const userRoutes = require("./routes/userRoutes");
 
 // ➤ Enregistrement des routes
 app.use("/api/students", studentRoutes);
-app.use("/api/modules-globales", moduleGlobalRoutes);
+app.use('/api/modules', require('./routes/moduleRoutes'));
 app.use("/api/semestres", semestreRoutes);
 app.use("/api/departements", departementRoutes);
 app.use("/api/notes", noteRoutes);

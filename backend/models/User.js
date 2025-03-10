@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   departementCode: { type: String }, // Utilisé pour les chefs de département et la secrétaire
-  sousModulesEnseignes: [{ type: String, default: [] }] // Utilisé pour les professeurs
+  sousModulesEnseignes: [{ type: String, default: [] }], // Utilisé pour les professeurs
+  createdAt: { type: Date, default: Date.now },
 });
 
 const User = mongoose.model("User", userSchema);

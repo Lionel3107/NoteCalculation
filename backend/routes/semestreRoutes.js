@@ -1,30 +1,38 @@
-const express = require("express");
-const Semestre = require("../models/Semestre");
-const ModuleGlobal = require("../models/ModuleGlobal");
-
+// backend/routes/semestreRoutes.js
+const express = require('express');
 const router = express.Router();
+const Semestre = require('../models/Semestre');
+const Module = require('../models/Module'); // Remplacer ModuleGlobal par Module
+const SousModule = require('../models/SousModule'); // Ajouter SousModule pour référence
 
-// ➤ Ajouter un semestre avec des modules globaux
-router.post("/", async (req, res) => {
+// ➤ Ajouter un semestre
+router.post('/', async (req, res) => {
   try {
     const { numero, description } = req.body;
 
     // Vérifier si le semestre existe déjà
-    const existingSemestre = await Semestre.findOne({ numero });
-    if (existingSemestre) return res.status(400).json({ message: "Ce semestre existe déjà." });
+    const existingSemestre = await Semestre.findOne({ numero: parseInt(numero) });
+    if (existingSemestre) {
+      return res.status(400).json({ message: 'Ce semestre existe déjà.' });
+    }
 
-    // Création du semestre sans restriction de département et niveau
-    const semestre = new Semestre({ numero, description });
+    // Validation du numéro de semestre
+    if (![1, 2, 3, 4, 5, 6].includes(parseInt(numero))) {
+      return res.status(400).json({ message: 'Numéro de semestre invalide. Valeurs possibles : 1, 2, 3, 4, 5, 6.' });
+    }
 
+    // Création du semestre
+    const semestre = new Semestre({ numero: parseInt(numero), description });
     await semestre.save();
     res.status(201).json(semestre);
   } catch (error) {
+    console.log('❌ Erreur lors de l’ajout du semestre :', error.message);
     res.status(400).json({ message: error.message });
   }
 });
 
-// 
-router.put("/:semestreNumero/:departementCode/modules", async (req, res) => {
+// ➤ Ajouter des modules globaux à un semestre pour un département
+router.put('/:semestreNumero/:departementCode/modules', async (req, res) => {
   try {
     const { semestreNumero, departementCode } = req.params;
     const { moduleCodes } = req.body;
@@ -35,95 +43,143 @@ router.put("/:semestreNumero/:departementCode/modules", async (req, res) => {
     // Vérifier si le semestre existe
     const semestre = await Semestre.findOne({ numero: parseInt(semestreNumero) });
     if (!semestre) {
-      return res.status(404).json({ message: "Semestre non trouvé" });
+      return res.status(404).json({ message: 'Semestre non trouvé.' });
     }
 
-    // Vérifier que les modules existent bien
-    console.log(`📌 Recherche des modules avec codes :`, moduleCodes, "et departementCode :", departementCode);
-    const modules = await ModuleGlobal.find({ code: { $in: moduleCodes }, departementCode: departementCode });
+    // Validation du département
+    if (!['INFO', 'MECA', 'ELEC'].includes(departementCode)) {
+      return res.status(400).json({ message: 'Code de département invalide. Valeurs possibles : INFO, MECA, ELEC.' });
+    }
+
+    // Vérifier que les modules existent et correspondent au département et au semestre
+    const semestreFormat = `S${semestreNumero}`;
+    const modules = await Module.find({
+      code: { $in: moduleCodes },
+      departementCode,
+      semestre: semestreFormat,
+    });
 
     console.log(`📌 Modules trouvés :`, modules);
 
     if (modules.length === 0) {
-      return res.status(404).json({ message: "Aucun module global trouvé pour ce département" });
+      return res.status(404).json({ message: 'Aucun module global trouvé pour ce département et semestre.' });
     }
 
-    // Ajouter les modules au semestre
-    semestre.modulesGlobales.push(...modules.map(m => m._id));
+    if (modules.length !== moduleCodes.length) {
+      return res.status(400).json({ message: 'Certains codes de modules sont invalides ou ne correspondent pas au département/semestre.' });
+    }
+
+    // Ajouter les modules au semestre (éviter les doublons)
+    const newModuleIds = modules.map((m) => m._id);
+    semestre.modulesGlobales = [...new Set([...semestre.modulesGlobales, ...newModuleIds])];
     await semestre.save();
 
-    res.json({ message: "Modules ajoutés avec succès au semestre", semestre });
+    res.json({ message: 'Modules ajoutés avec succès au semestre', semestre });
   } catch (error) {
+    console.log('❌ Erreur lors de l’ajout des modules :', error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
-
-// Récuperer les modules d'un département et d'un Semestre
-
-router.get("/:semestreNumero/:departementCode/modules", async (req, res) => {
+// ➤ Récupérer les modules d’un semestre pour un département
+router.get('/:semestreNumero/:departementCode/modules', async (req, res) => {
   try {
     const { semestreNumero, departementCode } = req.params;
 
     // Vérifier si le semestre existe
-    const semestre = await Semestre.findOne({ numero: parseInt(semestreNumero) }).populate("modulesGlobales");
-    if (!semestre) return res.status(404).json({ message: "Semestre non trouvé" });
+    const semestre = await Semestre.findOne({ numero: parseInt(semestreNumero) }).populate('modulesGlobales');
+    if (!semestre) {
+      return res.status(404).json({ message: 'Semestre non trouvé.' });
+    }
+
+    // Validation du département
+    if (!['INFO', 'MECA', 'ELEC'].includes(departementCode)) {
+      return res.status(400).json({ message: 'Code de département invalide. Valeurs possibles : INFO, MECA, ELEC.' });
+    }
 
     // Filtrer les modules spécifiques au département
-    const modules = semestre.modulesGlobales.filter(m => m.departementCode === departementCode);
+    const modules = semestre.modulesGlobales.filter((m) => m.departementCode === departementCode);
 
-    if (modules.length === 0) return res.status(404).json({ message: "Aucun module trouvé pour ce département et semestre" });
+    if (modules.length === 0) {
+      return res.status(404).json({ message: 'Aucun module trouvé pour ce département et semestre.' });
+    }
 
-    res.json({ semestre: semestreNumero, departement: departementCode, modules });
+    // Récupérer les sous-modules associés
+    const moduleIds = modules.map((m) => m._id);
+    const sousModules = await SousModule.find({
+      moduleId: { $in: moduleIds },
+      departementCode,
+    });
+
+    const modulesWithSousModules = modules.map((module) => ({
+      ...module._doc,
+      sousModules: sousModules.filter((sm) => sm.moduleId.toString() === module._id.toString()),
+    }));
+
+    res.json({
+      semestre: `S${semestreNumero}`,
+      departement: departementCode,
+      modules: modulesWithSousModules,
+    });
   } catch (error) {
+    console.log('❌ Erreur lors de la récupération des modules :', error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
-
 // ➤ Récupérer tous les semestres
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const semestres = await Semestre.find().populate("modulesGlobales");
+    const semestres = await Semestre.find().populate('modulesGlobales');
     res.json(semestres);
   } catch (error) {
+    console.log('❌ Erreur lors de la récupération des semestres :', error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
 // ➤ Récupérer un semestre par numéro
-router.get("/:numero", async (req, res) => {
+router.get('/:numero', async (req, res) => {
   try {
-    const semestre = await Semestre.findOne({ numero: req.params.numero }).populate("modulesGlobales");
-    if (!semestre) return res.status(404).json({ message: "Semestre non trouvé" });
+    const semestre = await Semestre.findOne({ numero: parseInt(req.params.numero) }).populate('modulesGlobales');
+    if (!semestre) {
+      return res.status(404).json({ message: 'Semestre non trouvé.' });
+    }
     res.json(semestre);
   } catch (error) {
+    console.log('❌ Erreur lors de la récupération du semestre :', error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
 // ➤ Mettre à jour un semestre
-router.put("/:numero", async (req, res) => {
+router.put('/:numero', async (req, res) => {
   try {
     const semestre = await Semestre.findOneAndUpdate(
-      { numero: req.params.numero },
+      { numero: parseInt(req.params.numero) },
       req.body,
       { new: true }
     );
-    if (!semestre) return res.status(404).json({ message: "Semestre non trouvé" });
+    if (!semestre) {
+      return res.status(404).json({ message: 'Semestre non trouvé.' });
+    }
     res.json(semestre);
   } catch (error) {
+    console.log('❌ Erreur lors de la mise à jour du semestre :', error.message);
     res.status(400).json({ message: error.message });
   }
 });
 
 // ➤ Supprimer un semestre
-router.delete("/:numero", async (req, res) => {
+router.delete('/:numero', async (req, res) => {
   try {
-    const semestre = await Semestre.findOneAndDelete({ numero: req.params.numero });
-    if (!semestre) return res.status(404).json({ message: "Semestre non trouvé" });
-    res.json({ message: "Semestre supprimé avec succès" });
+    const semestre = await Semestre.findOneAndDelete({ numero: parseInt(req.params.numero) });
+    if (!semestre) {
+      return res.status(404).json({ message: 'Semestre non trouvé.' });
+    }
+    res.json({ message: 'Semestre supprimé avec succès.' });
   } catch (error) {
+    console.log('❌ Erreur lors de la suppression du semestre :', error.message);
     res.status(500).json({ message: error.message });
   }
 });

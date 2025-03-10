@@ -30,7 +30,23 @@ exports.isDirecteur = (req, res, next) => {
 };
 
 exports.isChefDepartement = (req, res, next) => {
-  if (req.user.role !== "ChefDepartement") return res.status(403).json({ message: "Accès interdit" });
+  if (req.user.role !== 'ChefDepartement') {
+    console.log('❌ Accès refusé : utilisateur non autorisé.');
+    return res.status(403).json({ message: 'Accès interdit. Seuls les chefs de département peuvent effectuer cette action.' });
+  }
+  next();
+};
+
+exports.restrictToOwnDepartement = (req, res, next) => {
+  const departementCode = req.body.departementCode || req.params.departementCode;
+  if (!departementCode) {
+    console.log('❌ ERREUR : Aucun département spécifié dans la requête.');
+    return res.status(400).json({ message: 'Erreur : Aucun département spécifié.' });
+  }
+  if (departementCode !== req.user.departementCode) {
+    console.log(`❌ Accès refusé : L'utilisateur (${req.user.departementCode}) ne peut pas agir sur le département ${departementCode}.`);
+    return res.status(403).json({ message: 'Accès interdit. Vous ne pouvez agir que sur votre département.' });
+  }
   next();
 };
 
@@ -39,8 +55,11 @@ exports.isProfesseur = (req, res, next) => {
   next();
 };
 
+// backend/middlewares/authMiddleware.js
 exports.isSecretaire = (req, res, next) => {
-  if (req.user.role !== "Secretaire") return res.status(403).json({ message: "Accès interdit" });
+  if (req.user.role !== 'Secretaire') {
+    return res.status(403).json({ message: 'Accès interdit. Seul la secrétaire peut effectuer cette action.' });
+  }
   next();
 };
 
@@ -56,6 +75,9 @@ exports.canViewNotes = (req, res, next) => {
 exports.canEnterNotes = async (req, res, next) => {
   try {
     console.log("🟢 Utilisateur authentifié :", req.user);
+    console.log("📌 Méthode de la requête :", req.method);
+    console.log("📌 Corps de la requête :", req.body);
+
 
     if (req.user.role !== "Professeur" && req.user.role !== "ChefDepartement") {
       console.log("❌ Accès refusé : utilisateur non autorisé.");

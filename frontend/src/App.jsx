@@ -1,7 +1,8 @@
+// src/App.js
 import React from "react";
 import AppRoutes from "./routes/AppRoutes.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import ModuleGlobalForm from './components/ModuleGlobalForm';
+// Supprimer l'import de ModuleGlobalForm s'il n'est pas utilisé
 import "./styles/global.css";
 
 function App() {
@@ -9,7 +10,6 @@ function App() {
     <AuthProvider>
       <AppRoutes />
     </AuthProvider>
-
   );
 }
 
