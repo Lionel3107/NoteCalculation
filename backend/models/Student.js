@@ -2,24 +2,14 @@ const mongoose = require("mongoose");
 
 // Définition du schéma Étudiant
 const studentSchema = new mongoose.Schema({
-  matricule: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    match: /^bs\d{5}$/ // Vérifie que le matricule respecte "bsXXXXX"
-  },
+  matricule: { type: String, required: true },
   nom: { type: String, required: true },
   prenom: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   telephone: { type: String },
   dateNaissance: { type: Date },
- // departement: { type: mongoose.Schema.Types.ObjectId, ref: "Departement", required: true }, // Lien vers le département
- departementCode: { type: String, required: true }, // Utilisation du code au lieu de l'ID
-  niveau: { 
-    type: String, 
-    required: true,
-    enum: ["L1", "L2", "L3"] // Uniquement L1, L2, L3
-  },
+  departementCode: { type: String, required: true },
+  niveau: { type: String, required: true },
   dateInscription: { type: Date, default: Date.now }
 });
 
