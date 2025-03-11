@@ -30,76 +30,93 @@ const calculateMoyenneSousModule = (notes, ponderations, noteParticipation, note
 };
 
 // ➤ Ajouter une note pour un sous-module (POST /api/notes/sous-modules)
-router.post('/sous-modules', authenticateToken, canEnterNotes, isProfesseur, isChefDepartement, async (req, res) => {
+router.post('/', verifyToken, canEnterNotes, async (req, res) => {
   try {
     const { etudiantMatricule, sousModuleCode, notes, ponderations, noteParticipation, notePresence } = req.body;
 
-    // Vérifier si l'étudiant existe
+    // Validation des champs
+    if (!etudiantMatricule || !sousModuleCode || !notes || !ponderations || noteParticipation === undefined || notePresence === undefined) {
+      return res.status(400).json({ message: 'Tous les champs sont requis.' });
+    }
+
+    if (notes.length !== ponderations.length) {
+      return res.status(400).json({ message: 'Le nombre de notes doit correspondre au nombre de pondérations.' });
+    }
+
+    // Validation des notes
+    if (notes.some(note => note < 0 || note > 20)) {
+      return res.status(400).json({ message: 'Les notes doivent être comprises entre 0 et 20.' });
+    }
+
+    // Validation des pondérations (en pourcentage)
+    const sumPonderations = parseFloat(ponderations.reduce((sum, p) => sum + p, 0).toFixed(2));
+    console.log('Somme des pondérations calculée :', sumPonderations); // Log pour débogage
+    if (Math.abs(sumPonderations - 85) > 0.01) { // La somme doit être 85% (présence 10%, participation 5%)
+      return res.status(400).json({ message: 'La somme des pondérations des notes doit être égale à 85% (présence 10%, participation 5%).' });
+    }
+
+    // Validation de notePresence et noteParticipation
+    if (notePresence < 0 || notePresence > 20 || noteParticipation < 0 || noteParticipation > 20) {
+      return res.status(400).json({ message: 'Les notes de présence et de participation doivent être comprises entre 0 et 20.' });
+    }
+
+    // Vérifier que l’étudiant existe
     const student = await Student.findOne({ matricule: etudiantMatricule });
     if (!student) {
       return res.status(404).json({ message: 'Étudiant non trouvé.' });
     }
 
-    // Vérifier si le sous-module existe
+    // Vérifier que le sous-module existe
     const sousModule = await SousModule.findOne({ code: sousModuleCode });
     if (!sousModule) {
       return res.status(404).json({ message: 'Sous-module non trouvé.' });
     }
 
-    // Vérifier que le sous-module appartient au département de l'utilisateur
-    if (sousModule.departementCode !== req.user.departementCode) {
-      return res.status(403).json({ message: 'Accès interdit. Ce sous-module n’appartient pas à votre département.' });
-    }
-
-    // Vérifier que l'étudiant appartient au bon département et niveau
-    if (student.departementCode !== sousModule.departementCode || student.niveau !== sousModule.niveauEtudes) {
-      return res.status(400).json({ message: 'L’étudiant n’appartient pas au département ou au niveau correspondant à ce sous-module.' });
-    }
-
-    // Vérifier que le professeur est assigné à ce sous-module
+    // Vérifier que le professeur est autorisé à noter ce sous-module
     if (!req.user.sousModulesEnseignes.includes(sousModuleCode)) {
-      return res.status(403).json({ message: 'Accès interdit. Vous n’êtes pas assigné à ce sous-module.' });
+      return res.status(403).json({ message: 'Vous n’êtes pas autorisé à ajouter une note pour ce sous-module.' });
     }
 
-    // Vérifier si le nombre de notes correspond au nombre de pondérations
-    if (notes.length !== ponderations.length || notes.length === 0) {
-      return res.status(400).json({ message: 'Le nombre de notes doit correspondre au nombre de pondérations.' });
+    // Vérifier que le sous-module appartient au département de l’étudiant
+    if (sousModule.departementCode !== student.departementCode) {
+      return res.status(400).json({ message: 'Le sous-module n’appartient pas au département de l’étudiant.' });
     }
 
-    // Vérifier que les pondérations totalisent 85% (présence 10%, participation 5%)
-    const totalPonderation = ponderations.reduce((acc, p) => acc + p, 0);
-    if (totalPonderation !== 85) {
-      return res.status(400).json({ message: 'La somme des pondérations des notes doit être égale à 85% (présence 10%, participation 5%).' });
+    // Calculer la moyenne du sous-module
+    let moyenneSousModule = 0;
+    for (let i = 0; i < notes.length; i++) {
+      moyenneSousModule += notes[i] * (ponderations[i] / 100); // Convertir chaque pondération en fraction
+    }
+    moyenneSousModule += (notePresence * 0.10) + (noteParticipation * 0.05); // Ajouter présence (10%) et participation (5%)
+
+    // Vérifier si une note existe déjà pour cet étudiant et ce sous-module
+    const existingNote = await Note.findOne({ etudiantMatricule, sousModuleCode });
+    if (existingNote) {
+      return res.status(400).json({ message: 'Une note existe déjà pour cet étudiant et ce sous-module.' });
     }
 
-    // Vérifier que les notes et les autres champs sont valides (entre 0 et 20)
-    if (
-      !notes.every((note) => note >= 0 && note <= 20) ||
-      noteParticipation < 0 || noteParticipation > 20 ||
-      notePresence < 0 || notePresence > 20
-    ) {
-      return res.status(400).json({ message: 'Les notes, la participation et la présence doivent être entre 0 et 20.' });
-    }
-
-    // Créer une nouvelle note
+    // Créer la note
     const note = new Note({
       etudiantMatricule,
       sousModuleCode,
       notes,
-      ponderations,
+      ponderations, // On stocke les pondérations en pourcentage
       noteParticipation,
       notePresence,
-      moyenneSousModule: calculateMoyenneSousModule(notes, ponderations, noteParticipation, notePresence),
+      moyenneSousModule,
     });
 
-    // Sauvegarder la note
     await note.save();
-    res.status(201).json({ message: 'Note sauvegardée avec succès', data: note });
+    res.status(201).json(note);
   } catch (error) {
-    console.error('Erreur dans /api/notes/sous-modules:', error.message);
-    res.status(500).json({ message: 'Erreur serveur', details: error.message });
+    console.log('❌ Erreur lors de l’ajout de la note :', error.message);
+    res.status(500).json({ message: error.message });
   }
 });
+
+
+// Autres routes inchangées...
+
 
 // ➤ Récupérer toutes les notes d’un étudiant
 router.get('/:etudiantMatricule', verifyToken, canViewNotes, async (req, res) => {
@@ -368,7 +385,7 @@ router.get('/sous-modules/:id', verifyToken, canViewNotes, async (req, res) => {
 });
 
 // ➤ Modifier une note
-router.put('/sous-modules/:id', authenticateToken, canEnterNotes, isProfesseur, isChefDepartement, async (req, res) => {
+router.put('/:etudiantMatricule/:sousModuleCode', authenticateToken, canEnterNotes, isProfesseur, isChefDepartement, async (req, res) => {
   try {
     const { id } = req.params;
     const { etudiantMatricule, notes, ponderations, noteParticipation, notePresence } = req.body;

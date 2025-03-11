@@ -2,11 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const Student = require('../models/Student');
-const Module = require('../models/Module'); // Remplacer ModuleGlobal par Module
-const SousModule = require('../models/SousModule'); // Ajout de SousModule
-const Note = require('../models/Note'); // Ajout de Note pour récupérer les moyennes
+const Module = require('../models/Module');
+const SousModule = require('../models/SousModule');
+const Note = require('../models/Note');
 
-// 📊 ➤ 1️⃣ Rapport de Performance des Étudiants
+// 📊 ➤ 1️⃣ Rapport de Performance des Étudiants avec détails des notes
 router.get('/etudiants/:departement/:niveau/:semestre', async (req, res) => {
   try {
     const { departement, niveau, semestre } = req.params;
@@ -49,12 +49,23 @@ router.get('/etudiants/:departement/:niveau/:semestre', async (req, res) => {
       sousModuleCode: { $in: sousModuleCodes },
     });
 
-    // Calculer la moyenne générale de chaque étudiant
-    const classement = students.map((student) => {
+    // Construire les données des étudiants avec leurs notes détaillées
+    const detailedStudents = students.map((student) => {
       const studentNotes = notes.filter((note) => note.etudiantMatricule === student.matricule);
+      const notesBySousModule = studentNotes.reduce((acc, note) => {
+        acc[note.sousModuleCode] = {
+          notePresence: note.notePresence,
+          noteParticipation: note.noteParticipation,
+          notes: note.notes,
+          ponderations: note.ponderations,
+          moyenneSousModule: note.moyenneSousModule,
+        };
+        return acc;
+      }, {});
+
+      // Calculer la moyenne générale
       let totalMoyenne = 0;
       let totalCoefficient = 0;
-
       studentNotes.forEach((note) => {
         const sousModule = sousModules.find((sm) => sm.code === note.sousModuleCode);
         const coefficient = sousModule?.coefficient || 1;
@@ -62,28 +73,38 @@ router.get('/etudiants/:departement/:niveau/:semestre', async (req, res) => {
         totalCoefficient += coefficient;
       });
 
-      const moyenneGenerale = totalCoefficient > 0 ? totalMoyenne / totalCoefficient : 0;
+      const moyenneGenerale = totalCoefficient > 0 ? parseFloat((totalMoyenne / totalCoefficient).toFixed(2)) : 0;
 
       return {
+        _id: student._id,
         matricule: student.matricule,
         nom: student.nom,
         prenom: student.prenom,
         email: student.email,
-        moyenneGenerale: parseFloat(moyenneGenerale.toFixed(2)),
+        departementCode: student.departementCode,
+        niveau: student.niveau,
+        dateInscription: student.dateInscription,
+        notes: notesBySousModule,
+        moyenneGenerale,
       };
     });
 
     // Trier les étudiants par moyenne générale (décroissante)
-    classement.sort((a, b) => b.moyenneGenerale - a.moyenneGenerale);
+    detailedStudents.sort((a, b) => b.moyenneGenerale - a.moyenneGenerale);
 
-    res.json({ departement, niveau, semestre, classement });
+    res.json({
+      departement,
+      niveau,
+      semestre,
+      students: detailedStudents,
+    });
   } catch (error) {
     console.log('❌ Erreur lors de la génération du rapport des étudiants :', error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
-// 📊 ➤ 2️⃣ Rapport des Modules
+// 📊 ➤ 2️⃣ Rapport des Modules (inchangé pour l'instant)
 router.get('/modules/:departement/:semestre', async (req, res) => {
   try {
     const { departement, semestre } = req.params;

@@ -4,7 +4,7 @@ import LoginPage from "../pages/LoginPage";
 import Dashboard from "../pages/Dashboard";
 import Etudiants from "../pages/Etudiants";
 import Notes from "../pages/Notes";
-import Teachers from "../pages/Teachers";
+
 
 
 const AppRoutes = () => {
@@ -15,7 +15,6 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/etudiants" element={<Etudiants />} />
         <Route path="/notes" element={<Notes />} />
-        <Route path="/teachers" element={< Teachers/>} />
       </Routes>
     </Router>
   );
