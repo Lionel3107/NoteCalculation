@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
 import Sidebar from "../components/Sidebar";
+import { Users, GraduationCap, BookOpen, TrendingUp, Activity, Bell } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -22,7 +23,7 @@ const Dashboard = () => {
             <h1 className="h2 text-dark fw-semibold mb-2">Tableau de bord</h1>
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <span className="position-relative me-2">
-                <span className="text-muted">🔔</span>
+                <Bell className="text-muted" size={20} />
                 <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                   4
                   <span className="visually-hidden">unread notifications</span>
@@ -40,10 +41,10 @@ const Dashboard = () => {
 
           <div className="row g-3 mb-4">
             <div className="col-12 col-sm-6 col-md-3">
-              <div className="card border-light shadow-sm p-3 h-100">
+              <div className="card border-light shadow-sm p-3 h-100 card-hover">
                 <div className="d-flex align-items-center gap-3">
                   <div className="bg-primary bg-opacity-10 p-2 rounded-3">
-                    <span className="text-primary" style={{ fontSize: '1.25rem' }}>👥</span>
+                    <Users className="text-primary" size={20} />
                   </div>
                   <div>
                     <p className="text-muted mb-1 small">Étudiants</p>
@@ -55,10 +56,10 @@ const Dashboard = () => {
             </div>
             
             <div className="col-12 col-sm-6 col-md-3">
-              <div className="card border-light shadow-sm p-3 h-100">
+              <div className="card border-light shadow-sm p-3 h-100 card-hover">
                 <div className="d-flex align-items-center gap-3">
                   <div className="bg-success bg-opacity-10 p-2 rounded-3">
-                    <span className="text-success" style={{ fontSize: '1.25rem' }}>🎓</span>
+                    <GraduationCap className="text-success" size={20} />
                   </div>
                   <div>
                     <p className="text-muted mb-1 small">Professeurs</p>
@@ -70,10 +71,10 @@ const Dashboard = () => {
             </div>
             
             <div className="col-12 col-sm-6 col-md-3">
-              <div className="card border-light shadow-sm p-3 h-100">
+              <div className="card border-light shadow-sm p-3 h-100 card-hover">
                 <div className="d-flex align-items-center gap-3">
                   <div className="bg-purple bg-opacity-10 p-2 rounded-3">
-                    <span className="text-purple" style={{ fontSize: '1.25rem' }}>📚</span>
+                    <BookOpen className="text-purple" size={20} />
                   </div>
                   <div>
                     <p className="text-muted mb-1 small">Cours</p>
@@ -85,10 +86,10 @@ const Dashboard = () => {
             </div>
             
             <div className="col-12 col-sm-6 col-md-3">
-              <div className="card border-light shadow-sm p-3 h-100">
+              <div className="card border-light shadow-sm p-3 h-100 card-hover">
                 <div className="d-flex align-items-center gap-3">
                   <div className="bg-warning bg-opacity-10 p-2 rounded-3">
-                    <span className="text-warning" style={{ fontSize: '1.25rem' }}>📈</span>
+                    <TrendingUp className="text-warning" size={20} />
                   </div>
                   <div>
                     <p className="text-muted mb-1 small">Moyenne</p>
@@ -106,10 +107,10 @@ const Dashboard = () => {
                 <h2 className="h5 fw-semibold text-dark mb-3">Activité récente</h2>
                 <div className="list-group">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="list-group-item list-group-item-action bg-light border-0 p-2">
+                    <div key={i} className="list-group-item list-group-item-action bg-light border-0 p-2 activity-item">
                       <div className="d-flex align-items-center gap-3">
                         <div className="bg-primary bg-opacity-10 p-2 rounded-3">
-                          <span className="text-primary" style={{ fontSize: '1rem' }}>⚡</span>
+                          <Activity className="text-primary" size={16} />
                         </div>
                         <div className="flex-grow-1">
                           <p className="mb-1 text-dark small fw-medium">Note mise à jour</p>
