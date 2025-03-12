@@ -176,31 +176,81 @@ const Etudiants = () => {
 
       console.log("Données extraites du fichier Excel :", jsonData);
 
-      // Vérification de la structure du fichier Excel
-      const requiredFields = ["Matricule", "Nom", "Prenom", "Email"];
-      const isValidStructure = jsonData.every((item) =>
-        requiredFields.every((field) => Object.keys(item).includes(field))
-      );
+      // Vérifier si le fichier contient des données
+      if (jsonData.length === 0) {
+        alert("❌ Le fichier Excel est vide ou ne contient pas de données valides.");
+        return;
+      }
 
-      if (!isValidStructure) {
+      // Obtenir les noms de colonnes du premier objet
+      const firstRow = jsonData[0];
+      const columns = Object.keys(firstRow);
+      console.log("Colonnes détectées :", columns);
+
+      // Vérifier si les colonnes nécessaires existent (de manière plus flexible)
+      const hasMatricule = columns.some(col => col.toLowerCase().includes('matricule'));
+      const hasNom = columns.some(col => col.toLowerCase().includes('nom'));
+      const hasPrenom = columns.some(col => col.toLowerCase().includes('prenom') || col.toLowerCase().includes('prénom'));
+      const hasEmail = columns.some(col => col.toLowerCase().includes('email') || col.toLowerCase().includes('mail'));
+
+      if (!hasMatricule || !hasNom || !hasPrenom || !hasEmail) {
         alert(
-          "❌ Le fichier Excel n'a pas la structure attendue. Les colonnes doivent être : Matricule, Nom, Prenom, Email."
+          "❌ Le fichier Excel n'a pas la structure attendue. Les colonnes doivent contenir : Matricule, Nom, Prenom, Email."
         );
         return;
       }
 
+      // Trouver les noms exacts des colonnes
+      const matriculeCol = columns.find(col => col.toLowerCase().includes('matricule'));
+      const nomCol = columns.find(col => col.toLowerCase().includes('nom'));
+      const prenomCol = columns.find(col => col.toLowerCase().includes('prenom') || col.toLowerCase().includes('prénom'));
+      const emailCol = columns.find(col => col.toLowerCase().includes('email') || col.toLowerCase().includes('mail'));
+
       // Mettre à jour l'état des étudiants avec les données extraites
       const formattedData = jsonData.map((item) => ({
-        matricule: item.Matricule,
-        nom: item.Nom,
-        prenom: item.Prenom,
-        email: item.Email,
+        matricule: item[matriculeCol],
+        nom: item[nomCol],
+        prenom: item[prenomCol],
+        email: item[emailCol],
+        departementCode: departement,
+        niveau: niveau,
       }));
 
       console.log("Données formatées :", formattedData);
 
-      // Ajouter les nouveaux étudiants à l'état
-      setEtudiants([...etudiants, ...formattedData]);
+      // Envoyer les données au backend
+      const token = localStorage.getItem("token");
+      axios
+        .post("http://localhost:5000/api/students/batch", formattedData, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          console.log("Réponse du serveur :", res.data);
+          alert(`✅ ${res.data.results.length} étudiants ajoutés avec succès !`);
+          
+          // Mettre à jour l'état des étudiants avec les nouveaux étudiants ajoutés
+          setEtudiants([...etudiants, ...res.data.results]);
+          
+          // Afficher les erreurs s'il y en a
+          if (res.data.errors && res.data.errors.length > 0) {
+            console.warn("Erreurs lors de l'ajout :", res.data.errors);
+            
+            // Créer un message d'erreur détaillé
+            let errorMessage = `⚠️ ${res.data.errors.length} étudiants n'ont pas pu être ajoutés :\n\n`;
+            
+            res.data.errors.forEach((error, index) => {
+              const student = error.student;
+              errorMessage += `${index + 1}. ${student.nom} ${student.prenom} (${student.matricule}) : ${error.error}\n`;
+            });
+            
+            alert(errorMessage);
+          }
+        })
+        .catch((err) => {
+          console.error("❌ Erreur lors de l'ajout multiple :", err);
+          console.error("Réponse du serveur :", err.response?.data);
+          alert("❌ Erreur lors de l'ajout ! Vérifiez les données.");
+        });
     };
 
     reader.readAsArrayBuffer(file);

@@ -9,8 +9,8 @@ const authMiddleware = require("./middlewares/authMiddleware");
 connectDB();
 
 const app = express();
-console.log("Port from .env:", process.env.Port);
-const PORT = process.env.PORT || 4040; // Utilise le port défini dans .env ou 4040 par défaut
+console.log("Port from .env:", process.env.PORT);
+const PORT = process.env.PORT || 5000; // Utilise le port défini dans .env ou 4040 par défaut
 
 // ➤ Appliquer les middlewares avant les routes
 app.use(express.json());
