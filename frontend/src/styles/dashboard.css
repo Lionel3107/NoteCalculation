@@ -1,31 +1,192 @@
-/* Styles du Dashboard */
+/* Général */
 .dashboard-container {
-    text-align: center;
-    margin: 50px auto;
-    width: 80%;
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background-color: #f9fafb; /* Gris très clair, comme UniGrade */
+  min-height: 100vh;
+  display: flex;
+  overflow-x: hidden;
+}
+
+.main-content {
+  overflow-x: hidden;
+  max-width: 100%;
+  background-color: #ffffff; /* Blanc */
+  margin-left: 250px; /* Espace pour la barre latérale */
+}
+
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  background-color: #ffffff; /* Blanc */
+  border: 1px solid #e5e7eb; /* Gris clair */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bg-primary.bg-opacity-10 {
+  background-color: rgba(59, 130, 246, 0.1) !important; /* Bleu clair */
+}
+
+.bg-success.bg-opacity-10 {
+  background-color: rgba(34, 197, 94, 0.1) !important; /* Vert clair */
+}
+
+.bg-purple.bg-opacity-10 {
+  background-color: rgba(139, 92, 246, 0.1) !important; /* Violet clair */
+}
+
+.bg-warning.bg-opacity-10 {
+  background-color: rgba(255, 159, 64, 0.1) !important; /* Orange clair */
+}
+
+.text-purple {
+  color: #8b5cf6; /* Violet */
+}
+
+.progress {
+  background-color: #f3f4f6; /* Gris clair */
+  border-radius: 0.375rem;
+}
+
+.progress-bar {
+  border-radius: 0.375rem;
+  transition: width 0.3s ease;
+}
+
+.list-group-item {
+  background-color: #f9fafb; /* Gris très clair */
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+  background-color: #f3f4f6; /* Gris clair */
+}
+
+.activity-item {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.activity-item:hover {
+  background-color: #e5e7eb; /* Gris clair */
+  transform: translateX(5px);
+}
+
+.small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #6b7280; /* Gris */
+}
+
+.h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937; /* Gris foncé */
+}
+
+.text-muted {
+  color: #6b7280; /* Gris */
+}
+
+.text-dark {
+  color: #1f2937; /* Gris foncé */
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.space-y-3 > * + * {
+  margin-top: 0.75rem;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #2563eb; /* Bleu UniGrade */
+  padding: 20px 0;
+  border-right: 1px solid #e5e7eb; /* Bordure légère */
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  overflow-x: hidden;
+}
+
+.sidebar a, .sidebar NavLink {
+  color: #ffffff; /* Texte blanc */
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacement entre icône et texte */
+  padding: 8px 20px; /* Espacement réduit verticalement */
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.sidebar a:hover, .sidebar a.active, .sidebar NavLink:hover, .sidebar NavLink.active {
+  color: #f0f9ff; /* Texte plus clair au survol */
+  background-color: #1d4ed8; /* Fond plus foncé pour l’élément actif ou au survol */
+  border-radius: 4px;
+}
+
+.sidebar svg {
+  min-width: 18px; /* Assure que les icônes ont une largeur minimum */
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none; /* Cache la barre latérale sur les petits écrans */
   }
-  
-  .dashboard-container h2 {
-    color: #1976d2;
-    font-size: 24px;
+
+  .main-content {
+    margin-left: 0; /* Pas de marge quand la barre est cachée */
   }
-  
-  .logout-btn {
-    margin-top: 20px;
-    padding: 12px;
-    background-color: #d32f2f;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  
-  .logout-btn:hover {
-    background-color: #b71c1c;
-  }
-  
+}
+
+/* Footer */
+footer {
+  background-color: #f9fafb; /* Gris très clair */
+  border-top: 1px solid #e5e7eb; /* Gris clair */
+}
+
+/* Typographie */
+h1, h2, h5 {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+}
+
+.text-muted {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.text-muted:hover {
+  opacity: 1;
+}
+
+/* Subtle animations */
+.btn:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+.badge {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}

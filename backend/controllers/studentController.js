@@ -53,29 +53,18 @@ const addMultipleStudents = async (req, res) => {
         // Vérifier si tous les champs requis sont présents
         if (!matricule || !nom || !prenom || !email || !departementCode || !niveau) {
           console.log("Champs manquants pour l'étudiant:", student);
-          errors.push({ 
-            student, 
-            error: "Champs manquants", 
-            details: {
-              matricule: !matricule ? "manquant" : "présent",
-              nom: !nom ? "manquant" : "présent",
-              prenom: !prenom ? "manquant" : "présent",
-              email: !email ? "manquant" : "présent",
-              departementCode: !departementCode ? "manquant" : "présent",
-              niveau: !niveau ? "manquant" : "présent"
-            }
-          });
+          errors.push({ student, error: "Champs manquants" });
           continue;
         }
 
         // Vérifier si l'étudiant existe déjà
-        const existingStudent = await Student.findOne({ 
+        const existingStudent = await Student.findOne({
           $or: [
             { email: email },
             { matricule: matricule }
           ]
         });
-        
+
         if (existingStudent) {
           // Option pour mettre à jour l'étudiant existant au lieu de le rejeter
           if (req.query.update === 'true') {
@@ -117,19 +106,15 @@ const addMultipleStudents = async (req, res) => {
         console.log("Étudiant ajouté avec succès:", savedStudent);
       } catch (error) {
         console.error("Erreur lors de l'ajout d'un étudiant:", error);
-        errors.push({ 
-          student, 
-          error: error.message,
-          stack: error.stack
-        });
+        errors.push({ student, error: error.message });
       }
     }
 
-    res.status(201).json({ 
-      success: true, 
-      message: `${results.length} étudiants ajoutés avec succès.`, 
-      results, 
-      errors 
+    res.status(201).json({
+      success: true,
+      message: `${results.length} étudiants ajoutés avec succès.`,
+      results,
+      errors
     });
   } catch (error) {
     console.error("❌ Erreur lors de l'ajout multiple d'étudiants :", error);

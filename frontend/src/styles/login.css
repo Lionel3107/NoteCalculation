@@ -1,63 +1,151 @@
 /* Styles de la page de connexion */
-body {
-  background: rgb(173, 154, 154);
-  font-family: 'Poppins', sans-serif;
-  margin: 0;
-  padding: 0;
+.login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  background-color: #f8f9fa;
 }
 
-.login-container {
+/* Carte de connexion */
+.login-card {
   width: 400px;
-  background: white;
+  background: #ffffff;
   padding: 30px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.login-container h2 {
-  margin-bottom: 20px;
-  font-size: 22px;
-  color: #333;
-}
-
-.login-form input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-.login-form button {
-  width: 100%;
-  padding: 12px;
-  background-color: #1976d2;
-  color: white;
-  font-size: 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.login-form button:hover {
-  background-color: #135ba1;
-}
-
-.forgot-password {
+/* Logo */
+.login-logo {
   display: block;
-  margin-top: 10px;
+  width: 70px;
+  margin: 0 auto 15px;
+}
+
+/* Titre */
+.login-title {
+  text-align: center;
+  font-weight: bold;
+  color: #E3005B;
+  margin-bottom: 20px;
+}
+
+/* Champs Input */
+.form-control {
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  transition: 0.3s;
+  width: 100%; /* Assurer que l'input prend toute la largeur */
+}
+.form-control:focus {
+  border-color: #E3005B;
+  box-shadow: none;
+}
+
+/* Bouton */
+.login-btn {
+  background-color: #E3005B;
+  border: none;
+  padding: 12px;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  transition: 0.3s;
+  width: 100%; /* Assurer que le bouton prend toute la largeur */
+}
+
+.login-btn:hover {
+  background-color: #FF4081;
+}
+
+/* Texte de lien */
+.login-link {
+  text-align: center;
+  margin-top: 15px;
   font-size: 14px;
-  color: #1976d2;
+}
+
+.login-link a {
   text-decoration: none;
+  font-weight: bold;
+  color: #E3005B;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}
+
+/* Forgot Password Link */
+.forgot-password {
+  display: inline-block;
+  float: right;
+  font-size: 14px;
+  color: #E3005B;
+  text-decoration: none;
+  margin-top: 5px;
+  transition: color 0.3s ease-in-out;
 }
 
 .forgot-password:hover {
+  color: #FF4081;
   text-decoration: underline;
+}
+
+/* Conteneur pour le champ de mot de passe et le bouton de visibilité */
+.password-input-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.password-input-container input {
+  width: 100%;
+  padding-right: 40px; /* Espace pour le bouton */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  color: #333;
+}
+
+/* Message d'erreur */
+.login-error {
+  color: #dc3545; /* Rouge pour les erreurs, ajuste selon ton thème */
+  margin-top: 5px;
+  font-size: 0.9em;
+  text-align: center; /* Centrer le message d'erreur */
+}
+
+/* Groupe pour le label et le lien "Forgot password" */
+.password-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.password-group .form-label {
+  margin: 0;
+}
+
+.password-group .forgot-password {
+  margin: 0;
+}
+
+/* Groupe pour le label seul (Email Address) */
+.form-label-group {
+  margin-bottom: 5px;
+}
+
+.form-label {
+  font-size: 14px;
+  color: #333;
 }

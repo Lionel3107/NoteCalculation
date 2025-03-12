@@ -5,6 +5,8 @@ import Dashboard from "../pages/Dashboard";
 import Etudiants from "../pages/Etudiants";
 import Notes from "../pages/Notes";
 
+
+
 const AppRoutes = () => {
   return (
     <Router>

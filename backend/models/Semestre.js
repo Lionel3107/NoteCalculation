@@ -1,13 +1,11 @@
-const mongoose = require("mongoose");
+// backend/models/Semestre.js
+const mongoose = require('mongoose');
 
 const semestreSchema = new mongoose.Schema({
-  numero: { type: Number, required: true, unique: true, enum: [1, 2, 3, 4, 5, 6] },
-  description: { type: String }, // Ex: "Semestre 1", "Semestre 2"
-  modulesGlobales: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "ModuleGlobal" 
-  }] // Liste des modules globaux spécifiques à ce semestre
+  numero: { type: Number, required: true, enum: [1, 2, 3, 4, 5, 6] }, // Correspond à S1, S2, etc.
+  description: { type: String },
+  modulesGlobales: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Module' }], // Référence aux modules globaux
+  createdAt: { type: Date, default: Date.now },
 });
 
-const Semestre = mongoose.model("Semestre", semestreSchema);
-module.exports = Semestre;
+module.exports = mongoose.model('Semestre', semestreSchema);

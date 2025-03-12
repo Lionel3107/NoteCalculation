@@ -42,17 +42,21 @@ const Etudiants = () => {
   useEffect(() => {
     if (!departement || !niveau || !semestre) return;
 
-    axios
-      .get(
-        `http://localhost:4040/api/departements/${departement}/${niveau}/semestre/${semestre}/etudiants`
-      )
-      .then((res) => {
-        console.log("🟢 Étudiants récupérés :", res.data.students); // 🔍 DEBUG
-        setEtudiants(res.data.students);
-      })
-      .catch((err) =>
-        console.error("❌ Erreur lors du chargement des étudiants :", err)
-      );
+    const fetchEtudiants = async () => {
+      try {
+        // Utiliser le port 5000 au lieu de 4040 pour correspondre au backend
+        const response = await axios.get(
+          `http://localhost:5000/api/students?departement=${departement}&niveau=${niveau}`
+        );
+        
+        console.log("🟢 Étudiants récupérés :", response.data);
+        setEtudiants(response.data);
+      } catch (err) {
+        console.error("❌ Erreur lors du chargement des étudiants :", err);
+      }
+    };
+
+    fetchEtudiants();
   }, [departement, niveau, semestre]);
 
   // Ouvrir la boîte de dialogue de modification
@@ -314,17 +318,21 @@ const Etudiants = () => {
               <TableCell>Nom</TableCell>
               <TableCell>Prénom</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Département</TableCell>
+              <TableCell>Niveau</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {etudiants.length > 0 ? (
+            {etudiants && etudiants.length > 0 ? (
               etudiants.map((etudiant) => (
                 <TableRow key={etudiant._id}>
                   <TableCell>{etudiant.matricule}</TableCell>
                   <TableCell>{etudiant.nom}</TableCell>
                   <TableCell>{etudiant.prenom}</TableCell>
                   <TableCell>{etudiant.email}</TableCell>
+                  <TableCell>{etudiant.departementCode}</TableCell>
+                  <TableCell>{etudiant.niveau}</TableCell>
                   <TableCell>
                     <Button
                       variant="outlined"
@@ -346,7 +354,7 @@ const Etudiants = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={7} align="center">
                   Aucun étudiant trouvé
                 </TableCell>
               </TableRow>
