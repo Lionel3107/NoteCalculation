@@ -385,7 +385,7 @@ router.get('/sous-modules/:id', verifyToken, canViewNotes, async (req, res) => {
 });
 
 // ➤ Modifier une note
-router.put('/:etudiantMatricule/:sousModuleCode', authenticateToken, canEnterNotes, isProfesseur, isChefDepartement, async (req, res) => {
+router.put('/:etudiantMatricule/:sousModuleCode', authenticateToken, isProfesseur, isChefDepartement, async (req, res) => {
   try {
     const { id } = req.params;
     const { etudiantMatricule, notes, ponderations, noteParticipation, notePresence } = req.body;
